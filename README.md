@@ -103,6 +103,33 @@ Evaluating safety inside the synchronous execution path requires strict latency 
 make benchmark
 ```
 
+```text
+============================================================
+ AgentGate Assessment Load & Throughput Test
+ Target: http://localhost:8080/v1/assess
+ Requests: 100 | Concurrency: 10
+============================================================
+Session Initialized: s_07aa61a0f90141f0
+
+[Progress] 100/100 requests completed.
+
+============================================================
+ Benchmark Results
+============================================================
+ Total Requests:        100
+ Successful (HTTP 200): 100
+ Failed:                0
+ Total Wall Time:       0.38s
+ Throughput:            262.24 req/sec
+
+ Latency Breakdown:
+   - p50 (Median):      32 ms
+   - p90:               48 ms
+   - p95:               53 ms
+   - p99:               62 ms
+============================================================
+```
+
 ---
 
 ## Threat Matrix & Attack Verification
@@ -330,6 +357,38 @@ curl -s -X POST http://localhost:8080/v1/assess \
 
 For detailed Kubernetes manifests, Helm values, and GPU memory sizing tables, see the [Operations & Deployment Guide](https://github.com/mohitdebian/AgentGate/wiki/Operations-and-Deployment).
 
+## Decision Model Setup & Hugging Face Hub
+
+AgentGate supports two model execution modes:
+
+### 1. Zero-GPU Mode (Default Stub)
+For rapid local development, CI pipelines, and environments without an NVIDIA GPU:
+```bash
+# Boots proxy, PostgreSQL, and decision server in lightweight stub mode
+docker compose up -d
+```
+The stub generates calibrated probability distributions with 25–40ms simulated latency, enabling full policy evaluation, streaming SSE logs, and approvals UI testing without downloading weights.
+
+### 2. GPU Accelerated Mode (Unsloth + Hugging Face Hub)
+For production deployments and GPU workstations (< 2 GB VRAM footprint):
+```bash
+# Enable Unsloth 4-bit inference and point to Hugging Face or local path
+export USE_UNSLOTH=1
+export DECISION_MODEL_PATH="mohitdebian/agentgate-qwen-0.8b" # or local directory path
+```
+On boot, the decision service automatically pulls the model adapter and Clef heads from Hugging Face Hub and loads them into GPU memory.
+
+### 3. Training & Publishing Custom Weights
+To fine-tune your own risk classification weights and publish them to Hugging Face:
+```bash
+# 1. Fine-tune on your domain tool calls (60 calibration steps, < 2.5 GB VRAM)
+python decision/train_decision_model.py
+
+# 2. Upload adapter checkpoint directly to Hugging Face Hub
+export HF_TOKEN="your_hf_write_token"
+python decision/upload_to_hf.py --repo your-username/agentgate-qwen-0.8b
+```
+
 ---
 
 ## Configuration Reference
@@ -344,7 +403,7 @@ Environment variables supported across services:
 | `AG_DECISION_DEADLINE_MS` | Proxy | `5000` | Timeout in milliseconds before invoking `on_model_error`. |
 | `DASHBOARD_TOKEN` | Proxy | `""` | Optional bearer token protecting administrative API endpoints. |
 | `USE_UNSLOTH` | Decision | `0` | Enable Unsloth GPU inference (`1`) or use local stub (`0`). |
-| `DECISION_MODEL_PATH` | Decision | `""` | Path to custom fine-tuned model checkpoint weights. |
+| `DECISION_MODEL_PATH` | Decision | `""` | Local path or Hugging Face Hub repo ID (e.g. `mohitdebian/agentgate-qwen-0.8b`). |
 
 ---
 
