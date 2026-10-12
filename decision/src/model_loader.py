@@ -19,13 +19,21 @@ class UnslothDecisionModel:
         if os.environ.get("USE_UNSLOTH") == "1":
             try:
                 from unsloth import FastDecisionModel
-                custom_checkpoint = os.environ.get("DECISION_MODEL_PATH", "/home/mohit/projects/agentgate/decision/qwen-decisions")
-                if os.path.exists(custom_checkpoint):
+                custom_checkpoint = os.environ.get("DECISION_MODEL_PATH")
+                if not custom_checkpoint:
+                    local_default = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "qwen-decisions"))
+                    if os.path.exists(local_default):
+                        custom_checkpoint = local_default
+
+                if custom_checkpoint and os.path.exists(custom_checkpoint):
                     load_path = custom_checkpoint
-                    print(f"Loading fine-tuned Unsloth checkpoint: {load_path}...")
+                    print(f"Loading fine-tuned Unsloth checkpoint from local path: {load_path}...")
+                elif custom_checkpoint:
+                    load_path = custom_checkpoint
+                    print(f"Loading Unsloth checkpoint from Hugging Face Hub: {load_path}...")
                 else:
                     load_path = model_name
-                    print(f"Loading Unsloth FastDecisionModel: {load_path}...")
+                    print(f"Loading default Unsloth base model: {load_path}...")
                 self.version = load_path
                 self.model, self.tokenizer = FastDecisionModel.from_pretrained(
                     load_path,
