@@ -4,7 +4,11 @@ Welcome to the **AgentGate** comprehensive documentation hub. This guide is orga
 
 ---
 
-## 📚 Navigation & Documentation Index
+## Navigation & Documentation Index
+
+* **Live GitHub Wiki**: [https://github.com/mohitdebian/AgentGate/wiki](https://github.com/mohitdebian/AgentGate/wiki)
+* **REST API OpenAPI Specification**: [openapi.yaml](openapi.yaml)
+* **Architecture Decision Records**: [adr/](adr/)
 
 ### 1. [Getting Started Guide](GETTING_STARTED.md)
 * Prerequisites (Docker, GPU passthrough, `uv` runtime).

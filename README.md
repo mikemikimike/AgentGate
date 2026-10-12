@@ -10,6 +10,20 @@ AgentGate is an out-of-process authorization proxy and security gateway for auto
 
 ---
 
+## Documentation Hub
+
+| Guide | Summary | Audience |
+| :--- | :--- | :--- |
+| [Architecture & Sequence Flow](https://github.com/mohitdebian/AgentGate/wiki/Architecture) | In-depth proxy pipeline, tokenizer assessment, and fail-closed security guarantees | System Architects |
+| [Client Integration Guide](https://github.com/mohitdebian/AgentGate/wiki/Client-Integration-Guide) | End-to-end integration for MCP, LangChain, CrewAI, AutoGen, TypeScript, and REST | Agent Developers |
+| [Policy DSL Specification](https://github.com/mohitdebian/AgentGate/wiki/Policy-Engine-Specification) | Declarative YAML syntax, evaluation order (`deny` > `ask` > `allow`), and offline replay | Security & Ops Engineers |
+| [Neural Risk Heads](https://github.com/mohitdebian/AgentGate/wiki/Neural-Risk-Heads) | Qwen 0.8B multi-head classification taxonomy, calibration, and benchmarks | Applied ML Engineers |
+| [Operations & Deployment](https://github.com/mohitdebian/AgentGate/wiki/Operations-and-Deployment) | Docker Compose, Kubernetes, GPU sizing, Prometheus metrics, and HA | DevOps & SREs |
+| [OpenAPI 3.1 REST Specification](docs/openapi.yaml) | Machine-readable API schema for sessions, assessments, decisions, and approvals | API Integrators |
+| [Architecture Decision Records (ADRs)](docs/adr/) | Immutable design decisions (Fast decision head vs LLM judge, fail-closed runtime) | Core Contributors |
+
+---
+
 ## Technical Overview
 
 Autonomous agents operating with tool execution capabilities (e.g., shell access, database queries, network requests) lack a mathematical boundary between developer instructions and untrusted data inside transformer context windows. When an agent processes untrusted inputs (emails, issue trackers, web scrapes), prompt injection can manipulate the agent into issuing destructive tool calls.
@@ -198,10 +212,13 @@ tools:
 
 ---
 
-## Client Integration
+## Integration & Deployment
 
-### 1. Model Context Protocol (MCP) Wrapper
-AgentGate provides a transparent stdio wrapper for Model Context Protocol servers. It intercepts tool requests between MCP clients (e.g., Claude Desktop, Cursor, local IDEs) and downstream tool servers:
+AgentGate is designed to drop cleanly into any AI agent stack without altering agent model weights or forcing vendor lock-in.
+
+### 1. Model Context Protocol (MCP) Sidecar
+
+For agent runtimes communicating over the Model Context Protocol (MCP) — such as Claude Desktop, Cursor, Cline, or Windsurf — AgentGate operates as a transparent stdio wrapper (`proxy/dist/src/mcp.js`). It intercepts `tools/call` events and queries AgentGate before forwarding to downstream tool servers:
 
 ```json
 {
@@ -220,18 +237,14 @@ AgentGate provides a transparent stdio wrapper for Model Context Protocol server
 }
 ```
 
-### 2. Direct HTTP API
-
-Any agent framework (LangChain, AutoGen, CrewAI, custom Python/TypeScript runtimes) can integrate using standard REST calls.
-
-#### Python Example
+### 2. Python Integration (LangChain, CrewAI, AutoGen, Custom)
 
 ```python
 import requests
 
 GATEWAY = "http://localhost:8080"
 
-# 1. Initialize an agent session
+# 1. Initialize an agent session with a declared operational goal
 session = requests.post(f"{GATEWAY}/v1/sessions", json={
     "agent_id": "ops-agent-01",
     "goal": "Run system diagnostics and verify service status"
@@ -257,6 +270,65 @@ elif verdict == "deny":
 elif verdict == "ask":
     print(f"Action held for operator approval. Decision ID: {assessment['decision_id']}")
 ```
+
+### 3. TypeScript / Node.js Integration (Vercel AI SDK, LangChain.js)
+
+```typescript
+const GATEWAY = process.env.AGENTGATE_URL || "http://localhost:8080";
+
+export async function assessAction(sessionId: string, tool: string, args: Record<string, unknown>) {
+  const res = await fetch(`${GATEWAY}/v1/assess`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      action: { tool, arguments: args }
+    })
+  });
+
+  if (!res.ok) {
+    // Fail-closed on gateway network or 5xx errors
+    throw new Error(`AgentGate gateway unreachable (HTTP ${res.status})`);
+  }
+
+  const { verdict, decision_id, reason_codes } = await res.json();
+  if (verdict === "deny") {
+    throw new Error(`Tool invocation rejected: ${reason_codes?.join(", ")}`);
+  }
+  if (verdict === "ask") {
+    console.warn(`Held for human operator approval: ${decision_id}`);
+    // Wait for resolution via SSE (/v1/decisions/stream) or polling
+  }
+  return verdict;
+}
+```
+
+### 4. Direct REST / cURL API
+
+```bash
+# 1. Register Session
+curl -s -X POST http://localhost:8080/v1/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"agent_id": "shell-worker", "goal": "Deploy updates"}'
+
+# 2. Assess Tool Call
+curl -s -X POST http://localhost:8080/v1/assess \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "<SESSION_ID>",
+    "action": {"tool": "bash_exec", "arguments": {"command": "uptime"}}
+  }'
+```
+
+### 5. Deployment Topologies
+
+| Deployment Topology | Architecture | Best For |
+| :--- | :--- | :--- |
+| **Local Developer Stack** | Single Docker Compose instance running Proxy, Decision (CPU stub), and PostgreSQL. | Local agent testing, CI pipelines, evaluation. |
+| **Edge / Workstation GPU** | Docker Compose with local NVIDIA GPU passthrough (`USE_UNSLOTH=1`). | Developer workstations with RTX/GTX GPUs, private staging. |
+| **High-Throughput Production** | Stateless Fastify proxy cluster behind an ingress load balancer + Dedicated GPU decision workers (T4 / A10G / L4) + Managed PostgreSQL (RDS / Cloud SQL). | Enterprise production agent fleets, high-concurrency tool execution. |
+
+For detailed Kubernetes manifests, Helm values, and GPU memory sizing tables, see the [Operations & Deployment Guide](https://github.com/mohitdebian/AgentGate/wiki/Operations-and-Deployment).
 
 ---
 
