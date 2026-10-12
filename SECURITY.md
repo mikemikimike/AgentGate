@@ -1,35 +1,35 @@
-# Security Policy 🛡️
+# Security Policy
 
-AgentGate is a security-critical infrastructure component designed to guard autonomous AI agent tool executions. We take the security of AgentGate itself and the systems it protects very seriously.
-
----
-
-## 🔒 Supported Versions
-
-We provide security updates and patches for the following versions:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.2.x   | :white_check_mark: |
-| < 0.2.0 | :x:                |
+AgentGate is a security-critical infrastructure gateway designed to enforce access control over autonomous AI agent tool executions. We treat the security and resilience of AgentGate and the systems it protects with the highest priority.
 
 ---
 
-## 🚨 Reporting a Vulnerability
+## Supported Versions
 
-If you discover a potential security vulnerability in AgentGate, **please do not disclose it publicly or open a public GitHub issue.**
+Security patches and bug fixes are actively provided for the following releases:
 
-### How to Report
+| Version | Status |
+| :--- | :--- |
+| `0.2.x` | Supported |
+| `< 0.2.0` | End of Life |
 
-1. **Email:** Send details of the vulnerability to `security@agentgate.dev` (or the repository maintainers).
-2. **Details to include:**
-   - A clear description of the vulnerability (e.g. prompt injection bypass, policy evasion, proxy denial-of-service).
-   - Step-by-step reproduction instructions or a minimal proof-of-concept.
-   - Any affected components (`proxy`, `decision`, `dashboard`, `database`).
-   - Your proposed remediation, if available.
+---
 
-### What to Expect
+## Reporting a Vulnerability
 
-* **Response SLA:** We will acknowledge receipt of your report within 48 hours.
-* **Assessment:** We will confirm the issue, rate its severity using CVSS, and keep you updated on progress.
-* **Fix & Advisory:** We will coordinate a release date for the security patch and publicly credit your discovery (if desired).
+If you identify a security vulnerability in AgentGate, do not disclose it publicly via GitHub issues, discussions, or social media.
+
+### Coordinated Disclosure Process
+
+1. **Submission**: Submit vulnerability details via GitHub Private Vulnerability Reporting or email the maintainers at `security@agentgate.dev` with a copy to `mohitdebian@users.noreply.github.com`.
+2. **Information to Include**:
+   * A technical description of the vulnerability (e.g., prompt injection bypass, policy evasion, authentication flaw, or denial-of-service vector).
+   * Reproduction steps, curl commands, or a minimal proof-of-concept.
+   * Affected components (`proxy`, `decision`, `dashboard`, `postgres`).
+   * Potential blast radius and suggested remediation, if identified.
+
+### Response Timelines
+
+* **Initial Acknowledgment**: Within 48 hours of report receipt.
+* **Triage & Severity Assessment**: Within 5 business days, including a CVSS rating.
+* **Remediation & Advisory**: We coordinate release timing with the reporter and provide attribution in release notes unless anonymity is requested.
