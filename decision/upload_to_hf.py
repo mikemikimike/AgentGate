@@ -14,6 +14,7 @@ import argparse
 import os
 import sys
 
+
 def main():
     parser = argparse.ArgumentParser(description="Upload AgentGate decision model to Hugging Face Hub")
     parser.add_argument("--repo", type=str, required=True, help="Hugging Face repo ID, e.g., mohitdebian/agentgate-qwen-0.8b")
@@ -50,7 +51,7 @@ def main():
         )
         print("\nUpload Complete!")
         print(f"Model is live at: https://huggingface.co/{args.repo}")
-        print(f"\nTo use this model in AgentGate, set:")
+        print("\nTo use this model in AgentGate, set:")
         print(f"  export DECISION_MODEL_PATH=\"{args.repo}\"")
     except Exception as e:
         print(f"\nUpload failed: {e}")
