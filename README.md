@@ -19,8 +19,8 @@ AgentGate is an out-of-process authorization proxy and security gateway for auto
 | [Policy DSL Specification](https://github.com/mohitdebian/AgentGate/wiki/Policy-Engine-Specification) | Declarative YAML syntax, evaluation order (`deny` > `ask` > `allow`), and offline replay | Security & Ops Engineers |
 | [Neural Risk Heads](https://github.com/mohitdebian/AgentGate/wiki/Neural-Risk-Heads) | Qwen 0.8B multi-head classification taxonomy, calibration, and benchmarks | Applied ML Engineers |
 | [Operations & Deployment](https://github.com/mohitdebian/AgentGate/wiki/Operations-and-Deployment) | Docker Compose, Kubernetes, GPU sizing, Prometheus metrics, and HA | DevOps & SREs |
-| [OpenAPI 3.1 REST Specification](docs/openapi.yaml) | Machine-readable API schema for sessions, assessments, decisions, and approvals | API Integrators |
-| [Architecture Decision Records (ADRs)](docs/adr/) | Immutable design decisions (Fast decision head vs LLM judge, fail-closed runtime) | Core Contributors |
+| [REST API & OpenAPI Specification](https://github.com/mohitdebian/AgentGate/wiki/API-Reference) | Complete endpoint schemas, request/response models, SSE streams, and telemetry | API Integrators |
+| [Architecture Decision Records (ADRs)](https://github.com/mohitdebian/AgentGate/wiki/Architecture-Decision-Records) | Immutable design decisions (Fast decision head vs LLM judge, fail-closed runtime) | Core Contributors |
 
 ---
 
