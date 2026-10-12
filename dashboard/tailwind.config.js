@@ -1,0 +1,70 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        bg: 'var(--bg)',
+        pn: 'var(--pn)',
+        rs: 'var(--rs)',
+        hv: 'var(--hv)',
+        sl: 'var(--sl)',
+        ln: 'var(--ln)',
+        l2: 'var(--l2)',
+        tx: 'var(--tx)',
+        t2: 'var(--t2)',
+        t3: 'var(--t3)',
+        ac: 'var(--ac)',
+        at: 'var(--at)',
+        ok: 'var(--ok)',
+        wn: 'var(--wn)',
+        bad: 'var(--bad)',
+        nf: 'var(--nf)',
+        okb: 'var(--okb)',
+        wnb: 'var(--wnb)',
+        badb: 'var(--badb)',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace']
+      },
+      fontSize: {
+        base: ['13px', '20px'],
+        title: ['15px', '22px'],
+        heading: ['20px', '28px'],
+        sm: ['12px', '16px'],
+        xs: ['11.5px', '16px'],
+        headval: ['17px', '22px'],
+      },
+      spacing: {
+        4: '4px',
+        6: '6px',
+        8: '8px',
+        10: '10px',
+        12: '12px',
+        14: '14px',
+        16: '16px',
+        18: '18px',
+        20: '20px',
+        24: '24px',
+        28: '28px',
+        36: '36px',
+        44: '44px',
+        48: '48px',
+        224: '224px',
+      },
+      borderRadius: {
+        4: '4px',
+        5: '5px',
+        6: '6px',
+        8: '8px',
+        15: '15px',
+        22: '22px',
+      }
+    },
+  },
+  plugins: [],
+}

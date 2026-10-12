@@ -1,0 +1,82 @@
+# ==============================================================================
+# AgentGate - Git Ignore Configuration
+# ==============================================================================
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Python virtual environments & bytecode
+.venv/
+.venv*/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+eggs/
+.eggs/
+parts/
+var/
+sdist/
+*.egg-info/
+.installed.cfg
+*.egg
+unsloth_compiled_cache/
+
+# Training checkpoints & heavy weights (hosted on Hugging Face / Releases)
+decision/outputs/
+*.pt
+*.pth
+*.bin
+*.ckpt
+*.safetensors
+*.zip
+*.tar.gz
+*.tar
+*.mp4
+
+# Environment & local secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# Logs & test reports
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+.coverage
+htmlcov/
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~

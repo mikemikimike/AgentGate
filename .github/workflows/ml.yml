@@ -1,0 +1,10 @@
+name: ML Pipeline Placeholder
+
+on:
+  workflow_dispatch:
+
+jobs:
+  train-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "ML Pipeline will run on GPU runners."

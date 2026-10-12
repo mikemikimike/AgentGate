@@ -1,0 +1,33 @@
+version: 1
+defaults:
+  on_model_error: ask
+  abstain:
+    heads:
+      - untrusted_influence
+      - goal_alignment
+    max_prob_below: 0.55
+tools:
+  "send_*":
+    rules:
+      - id: deny-injected-exfil
+        when:
+          head: untrusted_influence
+          option: likely
+          gt: 0.5
+        action: deny
+        reason: "Prompt injection detected; blocking external transmission."
+    default: ask
+  "bash_exec":
+    rules:
+      - id: deny-untrusted-exec
+        when:
+          head: untrusted_influence
+          option: likely
+          gt: 0.5
+        action: deny
+        reason: "Untrusted prompt influence detected on shell execution."
+    default: ask
+  "read_file":
+    default: allow
+  "*":
+    default: ask

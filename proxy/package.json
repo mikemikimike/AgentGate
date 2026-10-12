@@ -1,0 +1,35 @@
+{
+  "name": "agentgate-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/ --ext .ts",
+    "migrate": "node-pg-migrate"
+  },
+  "dependencies": {
+    "fastify": "^4.24.0",
+    "fastify-sse-v2": "^3.1.2",
+    "gpt-tokenizer": "^2.1.2",
+    "pg": "^8.11.3",
+    "zod": "^3.22.4",
+    "yaml": "^2.3.4",
+    "pino": "^8.16.1",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.10.9",
+    "typescript": "^5.2.2",
+    "ts-node-dev": "^2.0.0",
+    "vitest": "^0.34.6",
+    "node-pg-migrate": "^6.2.2",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0"
+  }
+}

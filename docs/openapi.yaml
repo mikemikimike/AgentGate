@@ -1,0 +1,99 @@
+openapi: 3.0.0
+info:
+  title: AgentGate Proxy API
+  version: "0.1.0"
+paths:
+  /v1/sessions:
+    post:
+      summary: Initialize a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent_id, goal]
+              properties:
+                agent_id: { type: string }
+                goal: { type: string }
+      responses:
+        '200':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id: { type: string }
+  /v1/assess:
+    post:
+      summary: Assess a proposed call
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id, action]
+              properties:
+                session_id: { type: string }
+                action:
+                  type: object
+                  required: [tool, arguments]
+                  properties:
+                    tool: { type: string }
+                    arguments: { type: object }
+                history_override:
+                  type: array
+                  items: { type: object }
+                  nullable: true
+      responses:
+        '200':
+          description: Verdict returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  decision_id: { type: string }
+                  verdict: { type: string }
+                  reason_codes:
+                    type: array
+                    items: { type: string }
+                  heads: { type: object }
+                  policy_version: { type: integer }
+                  model_version: { type: string }
+                  latency_ms:
+                    type: object
+                    properties:
+                      model: { type: integer }
+                      total: { type: integer }
+  /v1/decisions:
+    get:
+      summary: List decisions
+      responses:
+        '200':
+          description: List of decisions
+  /v1/approvals:
+    get:
+      summary: List approvals
+      responses:
+        '200':
+          description: List of pending approvals
+  /v1/policy:
+    get:
+      summary: Get active policy
+      responses:
+        '200':
+          description: Current policy
+    put:
+      summary: Update active policy
+      responses:
+        '200':
+          description: Policy updated
+  /v1/model:
+    get:
+      summary: Get model info (proxied)
+      responses:
+        '200':
+          description: Model tokenizer and info
