@@ -10,8 +10,8 @@ Security patches and bug fixes are actively provided for the following releases:
 
 | Version | Status |
 | :--- | :--- |
-| `0.2.x` | Supported |
-| `< 0.2.0` | End of Life |
+| `0.1.x` | Supported |
+| `< 0.1.0` | End of Life |
 
 ---
 
