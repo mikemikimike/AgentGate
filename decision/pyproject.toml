@@ -5,17 +5,20 @@ description = "AgentGate Decision Server"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "unsloth",
-    "torch",
-    "transformers",
     "fastapi>=0.100.0",
     "uvicorn>=0.23.0",
     "pydantic>=2.0.0",
 ]
 
 [project.optional-dependencies]
+unsloth = [
+    "unsloth",
+    "torch",
+    "transformers",
+]
 dev = [
     "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",
     "httpx>=0.25.0",
@@ -24,6 +27,11 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]

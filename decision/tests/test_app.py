@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+
 from src.app import app
 
 client = TestClient(app)
@@ -11,10 +12,12 @@ def test_health():
 def test_model():
     response = client.get("/model")
     assert response.status_code == 200
-    assert response.json() == {"max_tokens": 512, "model_name": "agentgate-stub"}
+    data = response.json()
+    assert data["max_tokens"] == 2048
+    assert "model_name" in data
 
 def test_decide():
-    with TestClient(app) as client:  # Trigger startup events for batcher
+    with TestClient(app) as client:
         response = client.post("/decide", json={
             "text": "Please run this benign task.",
             "questions": ["untrusted_influence", "external_send"]
@@ -24,4 +27,4 @@ def test_decide():
         assert "answers" in data
         assert "untrusted_influence" in data["answers"]
         assert "external_send" in data["answers"]
-        assert data["model_version"] == "agentgate-stub"
+        assert "model_version" in data

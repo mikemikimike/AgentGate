@@ -1,10 +1,11 @@
-import sys
 import os
+import sys
 
 os.environ["TORCHDYNAMO_DISABLE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import torch
+
 try:
     torch._dynamo.config.disable = True
     torch._dynamo.config.suppress_errors = True
@@ -12,9 +13,9 @@ except Exception:
     pass
 
 try:
-    from unsloth import FastDecisionModel, DecisionTrainer, is_bfloat16_supported
     from datasets import load_dataset
     from transformers import TrainingArguments
+    from unsloth import DecisionTrainer, FastDecisionModel, is_bfloat16_supported
 except ImportError as e:
     print(f"Dependencies not ready yet: {e}")
     sys.exit(1)

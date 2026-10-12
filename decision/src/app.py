@@ -1,6 +1,7 @@
+import time
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import time
 
 from src.model_loader import load_model
 from src.questions import QUESTIONS

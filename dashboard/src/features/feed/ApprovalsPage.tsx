@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetcher } from '../../lib/api';
 import { HeadCard } from '../../components/HeadCard';
@@ -30,7 +30,7 @@ export function ApprovalsPage() {
     }
   });
 
-  const pendingList = decisions || [];
+  const pendingList = useMemo(() => decisions || [], [decisions]);
   const selected = pendingList.find((d: any) => d.id === selectedId) || pendingList[0];
 
   // Keyboard shortcuts: A for Approve, D for Deny, J/K for navigate

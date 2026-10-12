@@ -19,7 +19,7 @@ interface ReplayResult {
 }
 
 function safeKey(k: string): string {
-  if (k.includes('*') || /[:{}\[\],&*#?|\-<>=!%@\\]/.test(k) || !/^[A-Za-z0-9_\-\.]+$/.test(k)) {
+  if (k.includes('*') || /[-:{}[\\],&*#?|<>=!%@\\]/.test(k) || !/^[A-Za-z0-9_.-]+$/.test(k)) {
     return JSON.stringify(k);
   }
   return k;
@@ -91,7 +91,7 @@ function highlightYamlLine(line: string) {
     return <span className="text-[var(--t3)]">{line}</span>;
   }
   // Key-value pairs
-  const keyValMatch = line.match(/^(\s*(?:-\s+)?)([A-Za-z0-9_\-\*\.\/]+:)(\s*)(.*)$/);
+  const keyValMatch = line.match(/^(\s*(?:-\s+)?)([A-Za-z0-9_.*+/-]+:)(\s*)(.*)$/);
   if (keyValMatch) {
     const [, prefix, keyWithColon, spacing, val] = keyValMatch;
     let valEl = <span className="text-[var(--tx)]">{val}</span>;

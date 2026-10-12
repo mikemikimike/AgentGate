@@ -73,7 +73,7 @@ export function evaluatePolicy(tool: string, heads: any, policy: Policy, actionT
   const rules = toolConfig.rules || [];
   
   const matchedRules = rules.filter(r => evaluateCondition(r.when, heads));
-  let actions = matchedRules.map(r => r.action);
+  const actions = matchedRules.map(r => r.action);
   actions.push(toolConfig.default || "allow");
   
   const reasons = matchedRules.map(r => r.reason);

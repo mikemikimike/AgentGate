@@ -17,6 +17,11 @@ jobs:
           node-version: '22'
       - name: Install pnpm
         run: npm i -g pnpm
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.11'
+          enable-cache: true
       - name: Install dependencies
         run: make setup
       - name: Lint

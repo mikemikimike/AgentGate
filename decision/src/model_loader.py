@@ -1,8 +1,9 @@
 import asyncio
-from typing import Any
 import os
+from typing import Any
 
 from src.questions import QUESTIONS
+
 
 class UnslothDecisionModel:
     def __init__(self, model_name="unsloth/Qwen3.5-0.8B"):
@@ -18,7 +19,6 @@ class UnslothDecisionModel:
         if os.environ.get("USE_UNSLOTH") == "1":
             try:
                 from unsloth import FastDecisionModel
-                import torch
                 custom_checkpoint = os.environ.get("DECISION_MODEL_PATH", "/home/mohit/projects/agentgate/decision/qwen-decisions")
                 if os.path.exists(custom_checkpoint):
                     load_path = custom_checkpoint
@@ -108,7 +108,8 @@ class UnslothDecisionModel:
         is_evil = "evil" in text.lower()
         
         for q in questions:
-            if q not in QUESTIONS: continue
+            if q not in QUESTIONS:
+                continue
             
             if q == "untrusted_influence":
                 if is_evil:

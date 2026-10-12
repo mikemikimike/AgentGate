@@ -73,7 +73,7 @@ export function buildContext(
     }
     
     let stepText = `${reversedHistory.length - i}. ${step.tool}() -> ${resultText}`;
-    let stepTokens = encode(stepText).length;
+    const stepTokens = encode(stepText).length;
     
     if (stepTokens > remainingTokens) {
       if (remainingTokens > 5) {
