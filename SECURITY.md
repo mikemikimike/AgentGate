@@ -21,7 +21,7 @@ If you identify a security vulnerability in AgentGate, do not disclose it public
 
 ### Coordinated Disclosure Process
 
-1. **Submission**: Submit vulnerability details via GitHub Private Vulnerability Reporting or email the maintainers at `security@agentgate.dev` with a copy to `mohitdebian@users.noreply.github.com`.
+1. **Submission**: Submit vulnerability details via GitHub Private Vulnerability Reporting or email the maintainers directly at `devbyte.mohit@gmail.com`.
 2. **Information to Include**:
    * A technical description of the vulnerability (e.g., prompt injection bypass, policy evasion, authentication flaw, or denial-of-service vector).
    * Reproduction steps, curl commands, or a minimal proof-of-concept.
