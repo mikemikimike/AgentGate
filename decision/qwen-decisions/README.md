@@ -29,10 +29,6 @@ Used as the real-time neural evaluation engine in **[AgentGate](https://github.c
 
 Traditional AI agent guardrails use "LLM-as-a-judge" (e.g., prompting a 7B+ model via vLLM or Ollama to reply `{"verdict": "deny"}`). This introduces massive latency, high VRAM consumption, and vulnerability to prompt injection bypasses.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/mohitdebian/AgentGate/main/docs/images/benchmark_comparison.svg" alt="AgentGate vs Generative LLM Judges Benchmark" width="100%">
-</p>
-
 | Evaluation Metric | Generative LLM Judge (vLLM / Ollama) | Unsloth Decision Model (`agentgate-qwen-0.8b`) |
 | :--- | :--- | :--- |
 | **Inference Mechanism** | Autoregressive sequential token generation | **Single forward pass** (Clef head projection) |
