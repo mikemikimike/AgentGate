@@ -7,27 +7,84 @@ defaults:
       - goal_alignment
     max_prob_below: 0.55
 tools:
-  "send_*":
+  "bash":
     rules:
-      - id: deny-injected-exfil
+      - id: block-prompt-injection
         when:
           head: untrusted_influence
           option: likely
-          gt: 0.5
+          gt: 0.50
+        action: deny
+        reason: "Untrusted prompt influence exceeds safety threshold."
+    default: ask
+
+  "bash_exec":
+    rules:
+      - id: block-injected-shell
+        when:
+          head: untrusted_influence
+          option: likely
+          gt: 0.50
+        action: deny
+        reason: "Untrusted prompt influence detected on shell execution."
+      - id: block-destructive-command
+        when:
+          head: reversibility
+          option: irreversible
+          gt: 0.50
+        action: ask
+        reason: "Irreversible shell command requires operator review."
+    default: ask
+
+  "mail_send":
+    rules:
+      - id: block-exfiltration-send
+        when:
+          any:
+            - { head: untrusted_influence, option: likely, gt: 0.50 }
+            - { head: external_send, option: "yes", gt: 0.50 }
+        action: deny
+        reason: "External data exfiltration or prompt injection detected."
+    default: ask
+
+  "send_*":
+    rules:
+      - id: block-injected-send
+        when:
+          head: untrusted_influence
+          option: likely
+          gt: 0.50
         action: deny
         reason: "Prompt injection detected; blocking external transmission."
     default: ask
-  "bash_exec":
+
+  "file_edit":
     rules:
-      - id: deny-untrusted-exec
+      - id: block-system-mutation
         when:
           head: untrusted_influence
           option: likely
-          gt: 0.5
+          gt: 0.50
         action: deny
-        reason: "Untrusted prompt influence detected on shell execution."
+        reason: "Critical file mutation under untrusted context."
     default: ask
+
+  "database_query":
+    rules:
+      - id: block-injected-db
+        when:
+          head: untrusted_influence
+          option: likely
+          gt: 0.50
+        action: deny
+        reason: "Untrusted database query injection."
+    default: allow
+
+  "file_read":
+    default: allow
+
   "read_file":
     default: allow
+
   "*":
     default: ask

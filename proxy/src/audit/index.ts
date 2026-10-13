@@ -57,6 +57,14 @@ export async function writeDecisionRecord(data: {
   const argsRedacted = redactArguments(data.args);
   const argsSha256 = hashString(deterministicStringify(data.args));
   
+  if (data.policy_version) {
+    await pool.query(`
+      INSERT INTO policies (version, yaml, active, created_by)
+      VALUES ($1, 'version: ' || $1, true, 'auto')
+      ON CONFLICT (version) DO NOTHING
+    `, [data.policy_version]);
+  }
+
   if (data.model_version) {
     await pool.query(`
       INSERT INTO models (version, path, sha256, active) 

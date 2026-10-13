@@ -58,11 +58,34 @@ const SCENARIOS = [
   }
 ];
 
+const isTTY = process.stdout.isTTY !== false;
+const colorize = (text, padLen, colorCode) => {
+  const padded = text.padEnd(padLen);
+  return isTTY ? `\x1b[${colorCode}m${padded}\x1b[0m` : padded;
+};
+
+const formatVerdict = (v, padLen = 8) => {
+  const upper = v.toUpperCase();
+  if (upper === 'DENY') return colorize(upper, padLen, '31');       // Red
+  if (upper === 'ASK') return colorize(upper, padLen, '33');        // Yellow
+  if (upper === 'ALLOW') return colorize(upper, padLen, '32');      // Green
+  return colorize(upper, padLen, '35');                             // Magenta
+};
+
+const formatStatus = (pass, padLen = 6) => {
+  return pass ? colorize('PASS', padLen, '1;32') : colorize('FAIL', padLen, '1;31');
+};
+
+const formatLatency = (ms, padLen = 8) => {
+  return colorize(`${ms}ms`, padLen, '36');
+};
+
 async function verify() {
-  console.log('='.repeat(80));
+  const divider = '='.repeat(101);
+  console.log(divider);
   console.log('AgentGate Automated Security & Compliance Verification');
   console.log(`Target Gateway: ${TARGET_URL}`);
-  console.log('='.repeat(80));
+  console.log(divider);
 
   let sessionId;
   try {
@@ -87,8 +110,8 @@ async function verify() {
   let passed = 0;
   const latencies = [];
 
-  console.log('| ID     | Category                  | Tool            | Expected | Received | Latency | Status |');
-  console.log('|:-------|:--------------------------|:----------------|:---------|:---------|:--------|:-------|');
+  console.log('| ' + 'ID'.padEnd(6) + ' | ' + 'Category'.padEnd(36) + ' | ' + 'Tool'.padEnd(16) + ' | ' + 'Expected'.padEnd(8) + ' | ' + 'Received'.padEnd(8) + ' | ' + 'Latency'.padEnd(8) + ' | ' + 'Status'.padEnd(6) + ' |');
+  console.log('|:' + '-'.repeat(6) + '-|:' + '-'.repeat(36) + '-|:' + '-'.repeat(16) + '-|:' + '-'.repeat(8) + '-|:' + '-'.repeat(8) + '-|:' + '-'.repeat(8) + '-|:' + '-'.repeat(6) + '-|');
 
   for (const s of SCENARIOS) {
     const start = Date.now();
@@ -109,36 +132,44 @@ async function verify() {
       const success = received === s.expectedVerdict;
       if (success) passed++;
 
-      const statusTag = success ? 'PASS' : 'FAIL';
       console.log(
         `| ${s.id.padEnd(6)} ` +
-        `| ${s.category.padEnd(25)} ` +
-        `| ${s.tool.padEnd(15)} ` +
-        `| ${s.expectedVerdict.padEnd(8)} ` +
-        `| ${received.padEnd(8)} ` +
-        `| ${`${elapsed}ms`.padEnd(7)} ` +
-        `| ${statusTag.padEnd(6)} |`
+        `| ${s.category.padEnd(36)} ` +
+        `| ${s.tool.padEnd(16)} ` +
+        `| ${formatVerdict(s.expectedVerdict, 8)} ` +
+        `| ${formatVerdict(received, 8)} ` +
+        `| ${formatLatency(elapsed, 8)} ` +
+        `| ${formatStatus(success, 6)} |`
       );
     } catch (e) {
-      console.log(`| ${s.id.padEnd(6)} | ${s.category.padEnd(25)} | ${s.tool.padEnd(15)} | ${s.expectedVerdict} | ERROR    | 0ms     | FAIL   |`);
+      console.log(
+        `| ${s.id.padEnd(6)} ` +
+        `| ${s.category.padEnd(36)} ` +
+        `| ${s.tool.padEnd(16)} ` +
+        `| ${formatVerdict(s.expectedVerdict, 8)} ` +
+        `| ${colorize('ERROR', 8, '31')} ` +
+        `| ${formatLatency(0, 8)} ` +
+        `| ${formatStatus(false, 6)} |`
+      );
     }
   }
 
-  console.log('='.repeat(80));
+  console.log(divider);
   const avgLatency = (latencies.reduce((a, b) => a + b, 0) / latencies.length).toFixed(1);
   const p95Latency = latencies.sort((a, b) => a - b)[Math.floor(latencies.length * 0.95)] || latencies[latencies.length - 1];
 
   console.log(`Summary: ${passed}/${SCENARIOS.length} scenarios passed.`);
   console.log(`Latency: Average = ${avgLatency}ms | p95 = ${p95Latency}ms`);
-  console.log('='.repeat(80));
+  console.log(divider);
 
   if (passed === SCENARIOS.length) {
-    console.log('RESULT: 100% Security Invariants Verified. System is secure.\n');
+    console.log(isTTY ? '\x1b[1;32mRESULT: 100% Security Invariants Verified. System is secure.\x1b[0m\n' : 'RESULT: 100% Security Invariants Verified. System is secure.\n');
     process.exit(0);
   } else {
-    console.error('RESULT: Security invariant violations detected.\n');
+    console.error(isTTY ? '\x1b[1;31mRESULT: Security invariant violations detected.\x1b[0m\n' : 'RESULT: Security invariant violations detected.\n');
     process.exit(1);
   }
 }
+
 
 verify();

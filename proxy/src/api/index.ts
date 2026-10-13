@@ -33,7 +33,23 @@ const SessionRequestSchema = z.object({
 const decisionUrl = process.env.AG_DECISION_URL || 'http://decision:9000';
 const decisionDeadline = parseInt(process.env.AG_DECISION_DEADLINE_MS || '500');
 const decisionClient = new DecisionClient({ url: decisionUrl, deadlineMs: decisionDeadline });
-const policyPath = process.env.AG_POLICY_PATH || '/config/policy.yaml';
+function resolvePolicyPath(): string {
+  if (process.env.AG_POLICY_PATH && fs.existsSync(process.env.AG_POLICY_PATH)) {
+    return process.env.AG_POLICY_PATH;
+  }
+  const candidates = [
+    '/app/policy.yaml',
+    'policy.yaml',
+    './proxy/policy.yaml',
+    '/config/policy.yaml'
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return 'policy.yaml';
+}
+
+const policyPath = resolvePolicyPath();
 
 let cachedPolicy: any = null;
 let cachedPolicyYaml: string = '';
@@ -64,6 +80,12 @@ async function getActivePolicy() {
         const file = fs.readFileSync(policyPath, 'utf8');
         cachedPolicyYaml = file;
         cachedPolicy = PolicySchema.parse(yaml.parse(file));
+        // Auto-seed into DB so foreign key constraint is satisfied
+        await pool.query(`
+          INSERT INTO policies (version, yaml, active, created_by)
+          VALUES ($1, $2, true, 'system-init')
+          ON CONFLICT (version) DO UPDATE SET yaml = EXCLUDED.yaml, active = true
+        `, [cachedPolicy.version, cachedPolicyYaml]).catch(err => console.error('Failed to auto-seed policy into DB:', err));
       } else {
         cachedPolicyYaml = 'version: 1\ntools:\n  "*":\n    default: ask\n';
         cachedPolicy = { version: 1, tools: { "*": { default: "ask" } } };
@@ -75,6 +97,7 @@ async function getActivePolicy() {
       return { version: 1, tools: { "*": { default: "ask" } } };
     }
   }
+
   return cachedPolicy;
 }
 

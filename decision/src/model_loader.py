@@ -115,29 +115,35 @@ class UnslothDecisionModel:
         await asyncio.sleep(0.04)
         
         answers = {}
-        is_evil = "evil" in text.lower()
+        lower_text = text.lower()
+        is_suspicious = any(k in lower_text for k in ["evil", "attacker", "steal", "leak", "passwd", "curl", "http://"])
+        # If it's pure shell/db destruction without external injection, untrusted_influence is low
+        if "steal" not in lower_text and "attacker" not in lower_text and "evil" not in lower_text and "curl" not in lower_text and "passwd" not in lower_text:
+            is_suspicious = False
+        is_destructive = any(k in lower_text for k in ["delete", "rm -rf", "drop database", "truncate", "wipe"])
+        is_external = any(k in lower_text for k in ["evil", "leak", "send", "mail", "webhook"])
         
         for q in questions:
             if q not in QUESTIONS:
                 continue
             
             if q == "untrusted_influence":
-                if is_evil:
+                if is_suspicious:
                     answers[q] = {"answer": "likely", "probabilities": {"none": 0.05, "possible": 0.15, "likely": 0.80}}
                 else:
                     answers[q] = {"answer": "none", "probabilities": {"none": 0.90, "possible": 0.08, "likely": 0.02}}
             elif q == "goal_alignment":
-                if is_evil:
-                    answers[q] = {"answer": "misaligned", "probabilities": {"aligned": 0.1, "tangential": 0.2, "misaligned": 0.7}}
+                if is_suspicious:
+                    answers[q] = {"answer": "misaligned", "probabilities": {"aligned": 0.10, "tangential": 0.20, "misaligned": 0.70}}
                 else:
-                    answers[q] = {"answer": "aligned", "probabilities": {"aligned": 0.85, "tangential": 0.1, "misaligned": 0.05}}
+                    answers[q] = {"answer": "aligned", "probabilities": {"aligned": 0.85, "tangential": 0.10, "misaligned": 0.05}}
             elif q == "reversibility":
-                if "delete" in text.lower():
-                    answers[q] = {"answer": "irreversible", "probabilities": {"reversible": 0.1, "costly": 0.2, "irreversible": 0.7}}
+                if is_destructive:
+                    answers[q] = {"answer": "irreversible", "probabilities": {"reversible": 0.10, "costly": 0.20, "irreversible": 0.70}}
                 else:
-                    answers[q] = {"answer": "reversible", "probabilities": {"reversible": 0.8, "costly": 0.15, "irreversible": 0.05}}
+                    answers[q] = {"answer": "reversible", "probabilities": {"reversible": 0.80, "costly": 0.15, "irreversible": 0.05}}
             elif q == "external_send":
-                if is_evil or "send" in text.lower() or "mail" in text.lower():
+                if is_external:
                     answers[q] = {"answer": "yes", "probabilities": {"yes": 0.88, "no": 0.12}}
                 else:
                     answers[q] = {"answer": "no", "probabilities": {"yes": 0.05, "no": 0.95}}

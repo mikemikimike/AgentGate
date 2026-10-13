@@ -1,0 +1,9 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pt
+*.bin
+*.safetensors
+outputs/
+unsloth_compiled_cache/
