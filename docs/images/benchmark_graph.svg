@@ -1,274 +1,241 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 520" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" width="100%" height="100%">
   <defs>
-    <!-- Background Gradient -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0a0f1d"/>
-      <stop offset="50%" stop-color="#0f172a"/>
-      <stop offset="100%" stop-color="#090d16"/>
-    </linearGradient>
 
-    <!-- AgentGate Area Glow Gradient -->
-    <linearGradient id="agentgateArea" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#10b981" stop-opacity="0.28"/>
-      <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
-    </linearGradient>
+    <!-- Paper texture background noise -->
+    <filter id="paper" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise"/>
+      <feBlend in="SourceGraphic" in2="grayNoise" mode="multiply" result="blend"/>
+      <feComponentTransfer in="blend">
+        <feFuncR type="linear" slope="0.97" intercept="0.03"/>
+        <feFuncG type="linear" slope="0.97" intercept="0.03"/>
+        <feFuncB type="linear" slope="0.95" intercept="0.05"/>
+      </feComponentTransfer>
+    </filter>
 
-    <!-- Line Gradients -->
-    <linearGradient id="lineAgentGate" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#34d399"/>
-      <stop offset="100%" stop-color="#10b981"/>
-    </linearGradient>
-    <linearGradient id="lineLlama" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#a5b4fc"/>
-      <stop offset="100%" stop-color="#6366f1"/>
-    </linearGradient>
-    <linearGradient id="lineClaude" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#fde68a"/>
-      <stop offset="100%" stop-color="#f59e0b"/>
-    </linearGradient>
-    <linearGradient id="lineGpt" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#fda4af"/>
-      <stop offset="100%" stop-color="#f43f5e"/>
-    </linearGradient>
+    <!-- Rough hand-drawn line displacement (light wobble) -->
+    <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed="2" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
 
-    <!-- Glow Drop Shadows -->
-    <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#10b981" flood-opacity="0.6"/>
+    <!-- Rougher displacement for axis lines -->
+    <filter id="roughAxis" x="-2%" y="-2%" width="104%" height="104%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
-    <filter id="glowPurple" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#818cf8" flood-opacity="0.5"/>
+
+    <!-- Pencil stroke for text labels (slight roughness) -->
+    <filter id="roughText" x="-2%" y="-5%" width="104%" height="115%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="5" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
-    <filter id="glowOrange" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#f59e0b" flood-opacity="0.5"/>
-    </filter>
-    <filter id="glowRed" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#f43f5e" flood-opacity="0.5"/>
-    </filter>
+
   </defs>
 
   <style>
-    .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 19px; font-weight: 800; fill: #f8fafc; letter-spacing: -0.3px; }
-    .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; fill: #94a3b8; }
-    .badge-bg { rx: 6px; fill: #064e3b; stroke: #10b981; stroke-width: 1px; }
-    .badge-text { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; fill: #34d399; font-weight: 700; }
-    .axis-label { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; fill: #64748b; font-weight: 500; }
-    .legend-name { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11.5px; font-weight: 600; fill: #cbd5e1; }
-    .legend-val { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; font-weight: 700; }
-    .point-tag { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; font-weight: 700; }
-    .callout-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11.5px; font-weight: 700; }
-    .callout-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 10px; fill: #94a3b8; }
+    .label { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 12px; fill: #2d2d2d; }
+    .title { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 16px; font-weight: bold; fill: #1a1a1a; }
+    .axis-num { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 11px; fill: #555; }
+    .legend { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 11.5px; fill: #222; }
+    .callout { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 11px; fill: #333; }
+    .end-label { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 12px; font-weight: bold; }
   </style>
 
-  <!-- Outer Card Frame -->
-  <rect width="980" height="520" rx="16" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="1.5"/>
+  <!-- Paper background -->
+  <rect width="900" height="480" rx="8" fill="#fefdf5" filter="url(#paper)" stroke="#c8c0a8" stroke-width="1.5"/>
 
-  <!-- Header Section -->
-  <g transform="translate(36, 32)">
-    <circle cx="10" cy="10" r="10" fill="#10b981" opacity="0.2"/>
-    <circle cx="10" cy="10" r="4.5" fill="#10b981"/>
-    <text x="30" y="15" class="title">p95 Latency vs. Concurrent Request Load</text>
-    <text x="30" y="34" class="subtitle">Tool authorization overhead under scaling multi-agent traffic (single forward pass vs autoregressive generation)</text>
-    
-    <!-- Budget Badge -->
-    <g transform="translate(730, -2)">
-      <rect width="170" height="26" class="badge-bg"/>
-      <text x="85" y="17" class="badge-text" text-anchor="middle">⚡ Budget: &lt; 50ms</text>
-    </g>
+  <!-- Title -->
+  <text x="80" y="32" class="title">p95 Latency vs. Concurrent Request Load</text>
+  <text x="80" y="50" class="label" font-size="11" fill="#666">authorization overhead · single forward pass vs autoregressive token generation</text>
+
+  <!-- =================== LEGEND =================== -->
+  <!-- AgentGate -->
+  <line x1="80" y1="70" x2="104" y2="70" stroke="#22c55e" stroke-width="3" stroke-linecap="round" filter="url(#rough)"/>
+  <circle cx="92" cy="70" r="4" fill="#22c55e" stroke="#fff" stroke-width="1.5"/>
+  <text x="110" y="74" class="legend" fill="#166534">AgentGate (0.8B Clef)</text>
+  <text x="255" y="74" class="legend" fill="#166534" font-weight="bold">~38ms</text>
+
+  <!-- Llama Guard -->
+  <line x1="300" y1="70" x2="324" y2="70" stroke="#8b5cf6" stroke-width="3" stroke-linecap="round" filter="url(#rough)"/>
+  <circle cx="312" cy="70" r="4" fill="#8b5cf6" stroke="#fff" stroke-width="1.5"/>
+  <text x="330" y="74" class="legend" fill="#5b21b6">Llama Guard 3 (1B vLLM)</text>
+  <text x="488" y="74" class="legend" fill="#5b21b6" font-weight="bold">285ms+</text>
+
+  <!-- Claude -->
+  <line x1="548" y1="70" x2="572" y2="70" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" filter="url(#rough)"/>
+  <circle cx="560" cy="70" r="4" fill="#f59e0b" stroke="#fff" stroke-width="1.5"/>
+  <text x="578" y="74" class="legend" fill="#92400e">Claude 3.5 Haiku</text>
+  <text x="700" y="74" class="legend" fill="#92400e" font-weight="bold">1,150ms+</text>
+
+  <!-- GPT -->
+  <line x1="760" y1="70" x2="784" y2="70" stroke="#ef4444" stroke-width="3" stroke-linecap="round" filter="url(#rough)"/>
+  <circle cx="772" cy="70" r="4" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>
+  <text x="790" y="74" class="legend" fill="#991b1b">GPT-4o-mini</text>
+
+  <!-- =================== GRID + AXES =================== -->
+  <!-- Plot area: X=80..810, Y=90..410. Height=320px for 2500ms → 0.128px/ms. Y = 410 - (ms*0.128) -->
+  <!-- X coords: 1req=110, 10=220, 25=340, 50=470, 75=600, 100=730 -->
+
+  <!-- Y-axis grid lines (dashed, hand-drawn) -->
+  <!-- 2500ms → Y=90 -->
+  <line x1="80" y1="90" x2="810" y2="90" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
+  <!-- 2000ms → Y=154 -->
+  <line x1="80" y1="154" x2="810" y2="154" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
+  <!-- 1500ms → Y=218 -->
+  <line x1="80" y1="218" x2="810" y2="218" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
+  <!-- 1000ms → Y=282 -->
+  <line x1="80" y1="282" x2="810" y2="282" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
+  <!-- 500ms → Y=346 -->
+  <line x1="80" y1="346" x2="810" y2="346" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
+  <!-- 0ms → Y=410 (base) -->
+
+  <!-- Y axis labels -->
+  <text x="68" y="94" class="axis-num" text-anchor="end">2500ms</text>
+  <text x="68" y="158" class="axis-num" text-anchor="end">2000ms</text>
+  <text x="68" y="222" class="axis-num" text-anchor="end">1500ms</text>
+  <text x="68" y="286" class="axis-num" text-anchor="end">1000ms</text>
+  <text x="68" y="350" class="axis-num" text-anchor="end">500ms</text>
+  <text x="68" y="414" class="axis-num" text-anchor="end">0ms</text>
+
+  <!-- X-axis base line (hand-drawn, slightly rough) -->
+  <line x1="80" y1="410" x2="810" y2="410" stroke="#333" stroke-width="2" stroke-linecap="round" filter="url(#roughAxis)"/>
+  <!-- Y-axis left line -->
+  <line x1="80" y1="88" x2="80" y2="412" stroke="#333" stroke-width="2" stroke-linecap="round" filter="url(#roughAxis)"/>
+
+  <!-- X tick marks and labels -->
+  <!-- 1 req  → x=110 -->
+  <line x1="110" y1="408" x2="110" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
+  <text x="110" y="430" class="axis-num" text-anchor="middle">1 req</text>
+
+  <!-- 10 reqs → x=220 -->
+  <line x1="220" y1="408" x2="220" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
+  <text x="220" y="430" class="axis-num" text-anchor="middle">10</text>
+
+  <!-- 25 reqs → x=340 -->
+  <line x1="340" y1="408" x2="340" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
+  <text x="340" y="430" class="axis-num" text-anchor="middle">25</text>
+
+  <!-- 50 reqs → x=470 -->
+  <line x1="470" y1="408" x2="470" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
+  <text x="470" y="430" class="axis-num" text-anchor="middle">50</text>
+
+  <!-- 75 reqs → x=600 -->
+  <line x1="600" y1="408" x2="600" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
+  <text x="600" y="430" class="axis-num" text-anchor="middle">75</text>
+
+  <!-- 100 reqs → x=730 -->
+  <line x1="730" y1="408" x2="730" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
+  <text x="730" y="430" class="axis-num" text-anchor="middle">100 reqs</text>
+
+  <!-- X-axis title -->
+  <text x="445" y="458" class="label" text-anchor="middle" fill="#555">concurrent tool calls (load) →</text>
+
+  <!-- =================== LINES (hand-drawn with displacement) =================== -->
+
+  <!-- Y = 410 - (ms * 0.128) -->
+  <!-- GPT-4o-mini [RED]:
+       110: 1420 → 228.6
+       220: 1480 → 220.6
+       340: 1650 → 199.2
+       470: 1900 → 167.2
+       600: 2200 → 128.8
+       730: 2480 → 93.0
+  -->
+  <path d="M 110 228.6 C 165 224, 185 221, 220 220.6
+           C 275 212, 300 204, 340 199.2
+           C 398 186, 428 175, 470 167.2
+           C 528 152, 558 138, 600 128.8
+           C 658 115, 686 101, 730 93.0"
+        fill="none" stroke="#ef4444" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"
+        filter="url(#rough)"/>
+  <!-- GPT dots -->
+  <circle cx="110" cy="228.6" r="4" fill="#ef4444" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="340" cy="199.2" r="4" fill="#ef4444" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="730" cy="93.0" r="5" fill="#ef4444" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <text x="742" y="96" class="end-label" fill="#ef4444">2,480ms</text>
+
+  <!-- Claude 3.5 Haiku [AMBER]:
+       110: 1150 → 262.8
+       220: 1220 → 253.8
+       340: 1380 → 233.2
+       470: 1620 → 202.6
+       600: 1880 → 169.4
+       730: 2150 → 134.8
+  -->
+  <path d="M 110 262.8 C 165 258, 185 255, 220 253.8
+           C 275 246, 300 238, 340 233.2
+           C 398 222, 428 210, 470 202.6
+           C 528 188, 558 178, 600 169.4
+           C 658 155, 686 143, 730 134.8"
+        fill="none" stroke="#f59e0b" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"
+        filter="url(#rough)"/>
+  <!-- Claude dots -->
+  <circle cx="110" cy="262.8" r="4" fill="#f59e0b" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="340" cy="233.2" r="4" fill="#f59e0b" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="730" cy="134.8" r="5" fill="#f59e0b" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <text x="742" y="138" class="end-label" fill="#b45309">2,150ms</text>
+
+  <!-- Llama Guard 3 [PURPLE]:
+       110: 285  → 373.5
+       220: 340  → 366.5
+       340: 510  → 344.7
+       470: 740  → 315.3
+       600: 1040 → 276.9
+       730: 1350 → 237.2
+  -->
+  <path d="M 110 373.5 C 165 369, 185 367, 220 366.5
+           C 275 358, 300 351, 340 344.7
+           C 398 334, 428 323, 470 315.3
+           C 528 302, 558 288, 600 276.9
+           C 658 262, 686 248, 730 237.2"
+        fill="none" stroke="#8b5cf6" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"
+        filter="url(#rough)"/>
+  <!-- Llama dots -->
+  <circle cx="110" cy="373.5" r="4" fill="#8b5cf6" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="340" cy="344.7" r="4" fill="#8b5cf6" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="730" cy="237.2" r="5" fill="#8b5cf6" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <text x="742" y="241" class="end-label" fill="#5b21b6">1,350ms</text>
+
+  <!-- AgentGate [GREEN - near flat]:
+       110: 32ms → 405.9
+       220: 34ms → 405.6
+       340: 38ms → 405.1
+       470: 44ms → 404.4
+       600: 51ms → 403.5
+       730: 58ms → 402.6
+  -->
+  <path d="M 110 405.9 C 165 405.8, 185 405.7, 220 405.6
+           C 275 405.3, 300 405.1, 340 405.1
+           C 398 404.8, 428 404.5, 470 404.4
+           C 528 404.0, 558 403.7, 600 403.5
+           C 658 403.1, 686 402.8, 730 402.6"
+        fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+        filter="url(#rough)"/>
+  <!-- AgentGate dots (all shown since it's nearly flat) -->
+  <circle cx="110" cy="405.9" r="4.5" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="220" cy="405.6" r="4" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="340" cy="405.1" r="4" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="470" cy="404.4" r="4" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="600" cy="403.5" r="4" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <circle cx="730" cy="402.6" r="5" fill="#16a34a" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
+  <text x="742" y="406" class="end-label" fill="#166534">58ms</text>
+
+  <!-- =================== CALLOUT: AgentGate flat line =================== -->
+  <g transform="translate(320, 360)" filter="url(#roughText)">
+    <rect x="0" y="0" width="172" height="36" rx="5" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="10" y="15" class="callout" fill="#166534" font-weight="bold">flat line — single forward pass</text>
+    <text x="10" y="28" class="callout" fill="#166534">no KV-cache · no autoregression</text>
+    <!-- Arrow down to line -->
+    <line x1="86" y1="36" x2="86" y2="44" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="3,2"/>
+    <polygon points="83,44 89,44 86,49" fill="#22c55e"/>
   </g>
 
-  <!-- Interactive Legend Bar -->
-  <g transform="translate(40, 88)">
-    <!-- 1. AgentGate -->
-    <g transform="translate(0, 0)">
-      <circle cx="6" cy="6" r="5" fill="#10b981"/>
-      <text x="18" y="10" class="legend-name">AgentGate (0.8B Clef)</text>
-      <text x="172" y="10" class="legend-val" fill="#10b981">~38ms</text>
-    </g>
-    <!-- 2. Llama Guard 3 -->
-    <g transform="translate(235, 0)">
-      <circle cx="6" cy="6" r="5" fill="#818cf8"/>
-      <text x="18" y="10" class="legend-name">Llama Guard 3 (1B vLLM)</text>
-      <text x="175" y="10" class="legend-val" fill="#818cf8">285ms+</text>
-    </g>
-    <!-- 3. Claude 3.5 Haiku -->
-    <g transform="translate(480, 0)">
-      <circle cx="6" cy="6" r="5" fill="#f59e0b"/>
-      <text x="18" y="10" class="legend-name">Claude 3.5 Haiku (API)</text>
-      <text x="165" y="10" class="legend-val" fill="#f59e0b">1,150ms+</text>
-    </g>
-    <!-- 4. GPT-4o-mini -->
-    <g transform="translate(710, 0)">
-      <circle cx="6" cy="6" r="5" fill="#f43f5e"/>
-      <text x="18" y="10" class="legend-name">GPT-4o-mini (API)</text>
-      <text x="140" y="10" class="legend-val" fill="#f43f5e">1,420ms+</text>
-    </g>
+  <!-- =================== CALLOUT: autoregressive divergence =================== -->
+  <g transform="translate(490, 88)" filter="url(#roughText)">
+    <rect x="0" y="0" width="180" height="36" rx="5" fill="#fef9c3" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="10" y="15" class="callout" fill="#854d0e" font-weight="bold">sequential token decoding</text>
+    <text x="10" y="28" class="callout" fill="#854d0e">latency grows with queue depth</text>
   </g>
 
-  <!-- ==================== PLOT COORDINATE SYSTEM ==================== -->
-  <!-- Left Axis X = 100, Right Plot Limit X = 840, Y Base = 430, Y Top = 150 -->
-  <!-- Height = 280px for 2500ms range -> Scale: 0.112 px/ms. Y = 430 - (ms * 0.112) -->
-  <!-- X Coordinates:
-       1 req   = 130
-       10 reqs = 250
-       25 reqs = 390
-       50 reqs = 530
-       75 reqs = 670
-       100 reqs= 810
-  -->
-
-  <!-- Horizontal Grid Lines & Y Axis Labels -->
-  <!-- 2500ms -> Y = 150 -->
-  <line x1="100" y1="150" x2="840" y2="150" stroke="#1e293b" stroke-dasharray="4 4"/>
-  <text x="86" y="154" class="axis-label" text-anchor="end">2500ms</text>
-
-  <!-- 2000ms -> Y = 206 -->
-  <line x1="100" y1="206" x2="840" y2="206" stroke="#1e293b" stroke-dasharray="4 4"/>
-  <text x="86" y="210" class="axis-label" text-anchor="end">2000ms</text>
-
-  <!-- 1500ms -> Y = 262 -->
-  <line x1="100" y1="262" x2="840" y2="262" stroke="#1e293b" stroke-dasharray="4 4"/>
-  <text x="86" y="266" class="axis-label" text-anchor="end">1500ms</text>
-
-  <!-- 1000ms -> Y = 318 -->
-  <line x1="100" y1="318" x2="840" y2="318" stroke="#1e293b" stroke-dasharray="4 4"/>
-  <text x="86" y="322" class="axis-label" text-anchor="end">1000ms</text>
-
-  <!-- 500ms -> Y = 374 -->
-  <line x1="100" y1="374" x2="840" y2="374" stroke="#1e293b" stroke-dasharray="4 4"/>
-  <text x="86" y="378" class="axis-label" text-anchor="end">500ms</text>
-
-  <!-- 0ms -> Y = 430 (Base Line) -->
-  <line x1="100" y1="430" x2="840" y2="430" stroke="#334155" stroke-width="1.5"/>
-  <text x="86" y="434" class="axis-label" text-anchor="end">0ms</text>
-
-  <!-- Y Axis Boundary -->
-  <line x1="100" y1="140" x2="100" y2="430" stroke="#334155" stroke-width="1.5"/>
-
-  <!-- Vertical Grid Lines & X Axis Ticks -->
-  <g class="axis-label" text-anchor="middle">
-    <!-- 1 req -->
-    <line x1="130" y1="150" x2="130" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
-    <line x1="130" y1="430" x2="130" y2="436" stroke="#64748b" stroke-width="1.5"/>
-    <text x="130" y="455">1 req</text>
-
-    <!-- 10 reqs -->
-    <line x1="250" y1="150" x2="250" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
-    <line x1="250" y1="430" x2="250" y2="436" stroke="#64748b" stroke-width="1.5"/>
-    <text x="250" y="455">10 reqs</text>
-
-    <!-- 25 reqs -->
-    <line x1="390" y1="150" x2="390" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
-    <line x1="390" y1="430" x2="390" y2="436" stroke="#64748b" stroke-width="1.5"/>
-    <text x="390" y="455">25 reqs</text>
-
-    <!-- 50 reqs -->
-    <line x1="530" y1="150" x2="530" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
-    <line x1="530" y1="430" x2="530" y2="436" stroke="#64748b" stroke-width="1.5"/>
-    <text x="530" y="455">50 reqs</text>
-
-    <!-- 75 reqs -->
-    <line x1="670" y1="150" x2="670" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
-    <line x1="670" y1="430" x2="670" y2="436" stroke="#64748b" stroke-width="1.5"/>
-    <text x="670" y="455">75 reqs</text>
-
-    <!-- 100 reqs -->
-    <line x1="810" y1="150" x2="810" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
-    <line x1="810" y1="430" x2="810" y2="436" stroke="#64748b" stroke-width="1.5"/>
-    <text x="810" y="455">100 reqs</text>
-  </g>
-
-  <!-- ================= LINE 4: GPT-4o-mini (API) [RED / ROSE] ================= -->
-  <!-- 130: 1420ms -> Y = 430 - 159.0 = 271.0
-       250: 1480ms -> Y = 430 - 165.8 = 264.2
-       390: 1650ms -> Y = 430 - 184.8 = 245.2
-       530: 1900ms -> Y = 430 - 212.8 = 217.2
-       670: 2200ms -> Y = 430 - 246.4 = 183.6
-       810: 2480ms -> Y = 430 - 277.8 = 152.2
-  -->
-  <path d="M 130 271.0 C 190 268, 210 265, 250 264.2 C 310 255, 340 249, 390 245.2 C 455 233, 485 223, 530 217.2 C 595 203, 625 190, 670 183.6 C 730 171, 760 158, 810 152.2"
-        fill="none" stroke="url(#lineGpt)" stroke-width="3" stroke-linecap="round" filter="url(#glowRed)"/>
-
-  <!-- ================= LINE 3: Claude 3.5 Haiku (API) [AMBER / ORANGE] ================= -->
-  <!-- 130: 1150ms -> Y = 430 - 128.8 = 301.2
-       250: 1220ms -> Y = 430 - 136.6 = 293.4
-       390: 1380ms -> Y = 430 - 154.6 = 275.4
-       530: 1620ms -> Y = 430 - 181.4 = 248.6
-       670: 1880ms -> Y = 430 - 210.6 = 219.4
-       810: 2150ms -> Y = 430 - 240.8 = 189.2
-  -->
-  <path d="M 130 301.2 C 190 297, 210 294, 250 293.4 C 310 285, 340 280, 390 275.4 C 455 264, 485 253, 530 248.6 C 595 233, 625 225, 670 219.4 C 730 207, 760 196, 810 189.2"
-        fill="none" stroke="url(#lineClaude)" stroke-width="3" stroke-linecap="round" filter="url(#glowOrange)"/>
-
-  <!-- ================= LINE 2: Llama Guard 3 1B (vLLM) [INDIGO / PURPLE] ================= -->
-  <!-- 130: 285ms  -> Y = 430 - 31.9  = 398.1
-       250: 340ms  -> Y = 430 - 38.1  = 391.9
-       390: 510ms  -> Y = 430 - 57.1  = 372.9
-       530: 740ms  -> Y = 430 - 82.9  = 347.1
-       670: 1040ms -> Y = 430 - 116.5 = 313.5
-       810: 1350ms -> Y = 430 - 151.2 = 278.8
-  -->
-  <path d="M 130 398.1 C 190 395, 210 393, 250 391.9 C 310 384, 340 378, 390 372.9 C 455 362, 485 352, 530 347.1 C 595 332, 625 321, 670 313.5 C 730 298, 760 287, 810 278.8"
-        fill="none" stroke="url(#lineLlama)" stroke-width="3" stroke-linecap="round" filter="url(#glowPurple)"/>
-
-  <!-- ================= LINE 1: AgentGate Qwen 0.8B [EMERALD GREEN] ================= -->
-  <!-- 130: 32ms -> Y = 430 - 3.6 = 426.4
-       250: 34ms -> Y = 430 - 3.8 = 426.2
-       390: 38ms -> Y = 430 - 4.3 = 425.7
-       530: 44ms -> Y = 430 - 4.9 = 425.1
-       670: 51ms -> Y = 430 - 5.7 = 424.3
-       810: 58ms -> Y = 430 - 6.5 = 423.5
-  -->
-  <!-- Shaded Glowing Area under AgentGate -->
-  <path d="M 130 426.4 C 190 426.3, 210 426.2, 250 426.2 C 310 425.9, 340 425.7, 390 425.7 C 455 425.4, 485 425.1, 530 425.1 C 595 424.6, 625 424.3, 670 424.3 C 730 423.9, 760 423.5, 810 423.5 L 810 430 L 130 430 Z"
-        fill="url(#agentgateArea)"/>
-
-  <path d="M 130 426.4 C 190 426.3, 210 426.2, 250 426.2 C 310 425.9, 340 425.7, 390 425.7 C 455 425.4, 485 425.1, 530 425.1 C 595 424.6, 625 424.3, 670 424.3 C 730 423.9, 760 423.5, 810 423.5"
-        fill="none" stroke="url(#lineAgentGate)" stroke-width="3.5" stroke-linecap="round" filter="url(#glowGreen)"/>
-
-  <!-- Data Point Markers (Dots) -->
-  <!-- GPT Dots -->
-  <circle cx="130" cy="271.0" r="4" fill="#fb7185" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="390" cy="245.2" r="4" fill="#fb7185" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="810" cy="152.2" r="4.5" fill="#fb7185" stroke="#090d16" stroke-width="1.5"/>
-  <text x="825" y="156" class="point-tag" fill="#fb7185">2,480ms</text>
-
-  <!-- Claude Dots -->
-  <circle cx="130" cy="301.2" r="4" fill="#f59e0b" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="390" cy="275.4" r="4" fill="#f59e0b" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="810" cy="189.2" r="4.5" fill="#f59e0b" stroke="#090d16" stroke-width="1.5"/>
-  <text x="825" y="193" class="point-tag" fill="#f59e0b">2,150ms</text>
-
-  <!-- Llama Guard Dots -->
-  <circle cx="130" cy="398.1" r="4" fill="#818cf8" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="390" cy="372.9" r="4" fill="#818cf8" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="810" cy="278.8" r="4.5" fill="#818cf8" stroke="#090d16" stroke-width="1.5"/>
-  <text x="825" y="282" class="point-tag" fill="#818cf8">1,350ms</text>
-
-  <!-- AgentGate Dots -->
-  <circle cx="130" cy="426.4" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="250" cy="426.2" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="390" cy="425.7" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="530" cy="425.1" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="670" cy="424.3" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
-  <circle cx="810" cy="423.5" r="5.5" fill="#10b981" stroke="#090d16" stroke-width="2"/>
-  <text x="825" y="426" class="point-tag" fill="#10b981">58ms</text>
-
-  <!-- Callout Card: AgentGate Sub-40ms Flatline -->
-  <g transform="translate(340, 348)">
-    <rect width="216" height="52" rx="8" fill="#064e3b" fill-opacity="0.85" stroke="#10b981" stroke-width="1.2"/>
-    <text x="14" y="21" class="callout-title" fill="#34d399">⚡ Sub-40ms Baseline Flatline</text>
-    <text x="14" y="37" class="callout-sub">Single Forward Pass • 0 KV-Cache</text>
-    <path d="M 108 52 L 108 65" stroke="#10b981" stroke-width="1.5" stroke-dasharray="2 2"/>
-    <polygon points="105,65 111,65 108,70" fill="#10b981"/>
-  </g>
-
-  <!-- Callout Card: Autoregressive LLM Judges -->
-  <g transform="translate(530, 140)">
-    <rect width="210" height="46" rx="8" fill="#1e1b4b" fill-opacity="0.88" stroke="#6366f1" stroke-width="1"/>
-    <text x="12" y="19" class="callout-title" fill="#a5b4fc">Sequential Token Decoding</text>
-    <text x="12" y="34" class="callout-sub">KV-cache memory bloat under load</text>
-  </g>
-
-  <!-- X Axis Title -->
-  <text x="470" y="492" class="axis-label" text-anchor="middle" fill="#94a3b8" font-size="12px">Concurrent Tool Calls from Agent Fleet (Load) →</text>
 </svg>
