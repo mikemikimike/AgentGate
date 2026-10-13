@@ -89,7 +89,11 @@ Instead of relying on prompt-based LLM judges (which introduce 500–2000ms late
 
 ## Empirical Benchmarks & Latency Budget
 
-Evaluating safety inside the synchronous execution path requires strict latency budgeting. Autoregressive LLM judges degrade agent responsiveness and increase cloud token costs.
+Evaluating safety inside the synchronous execution path requires strict latency budgeting. Autoregressive LLM judges degrade agent responsiveness, allocate gigabytes of KV-cache, and increase cloud token costs.
+
+<p align="center">
+  <img src="docs/images/benchmark_comparison.svg" alt="AgentGate vs Generative LLM Judges Benchmark" width="100%">
+</p>
 
 | Approach | Latency (p95) | Cost / 1k Calls | Prompt Injection Defense |
 | :--- | :--- | :--- | :--- |

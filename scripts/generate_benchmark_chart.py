@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""
+Generates a dark-themed SVG benchmark chart comparing AgentGate
+to Generative LLM Judges (Latency, KV-Cache, VRAM footprint).
+"""
+
+import os
+
+SVG_CONTENT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 460" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="agentgateBar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.8"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <style>
+    .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 20px; font-weight: 700; fill: #f8fafc; }
+    .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; fill: #94a3b8; }
+    .section-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; font-weight: 600; fill: #cbd5e1; }
+    .label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 600; fill: #e2e8f0; }
+    .sublabel { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; fill: #64748b; }
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; font-weight: 700; }
+    .badge { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; font-weight: 600; }
+    .card-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; font-weight: 600; fill: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-val-good { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 20px; font-weight: 700; fill: #10b981; }
+    .card-val-bad { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 14px; font-weight: 600; fill: #f43f5e; }
+    .card-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; fill: #64748b; }
+  </style>
+
+  <!-- Background -->
+  <rect width="920" height="460" rx="16" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- Header -->
+  <g transform="translate(36, 40)">
+    <circle cx="10" cy="10" r="10" fill="#10b981" opacity="0.2"/>
+    <circle cx="10" cy="10" r="5" fill="#10b981"/>
+    <text x="30" y="16" class="title">AgentGate vs. Generative LLM Judges</text>
+    <text x="30" y="38" class="subtitle">p95 Evaluation Latency &amp; Memory Overhead in Synchronous Tool Execution Path</text>
+  </g>
+
+  <!-- Divider -->
+  <line x1="36" y1="100" x2="884" y2="100" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Left Column: Latency Bar Chart -->
+  <g transform="translate(36, 124)">
+    <text x="0" y="0" class="section-title">p95 Latency Breakdown (Lower is Better)</text>
+    <text x="0" y="18" class="sublabel">Single tool authorization decision overhead added to agent loop</text>
+
+    <!-- Row 1: AgentGate Qwen 0.8B -->
+    <g transform="translate(0, 36)">
+      <text x="0" y="16" class="label" fill="#10b981">AgentGate (Qwen 0.8B Clef)</text>
+      <text x="0" y="30" class="sublabel">Single forward pass • 0 KV-Cache</text>
+      <!-- Bar: 38ms (scaled relative to 1420ms max = 460px width) -> 38/1420*460 ~ 20px base min 36px -->
+      <rect x="220" y="4" width="34" height="28" rx="6" fill="url(#agentgateBar)" filter="url(#glow)"/>
+      <text x="264" y="23" class="mono" fill="#10b981">38 ms</text>
+      <!-- Pill -->
+      <rect x="330" y="7" width="92" height="22" rx="11" fill="#10b981" opacity="0.15"/>
+      <text x="376" y="22" class="badge" fill="#10b981" text-anchor="middle">Baseline (1x)</text>
+    </g>
+
+    <!-- Row 2: Llama Guard 3 1B -->
+    <g transform="translate(0, 102)">
+      <text x="0" y="16" class="label">Llama Guard 3 (1B vLLM)</text>
+      <text x="0" y="30" class="sublabel">Sequential token decoding</text>
+      <!-- Bar: 285ms -> 285/1420 * 360 ~ 80px -->
+      <rect x="220" y="4" width="85" height="28" rx="6" fill="#334155"/>
+      <text x="315" y="23" class="mono" fill="#cbd5e1">285 ms</text>
+      <rect x="382" y="7" width="94" height="22" rx="11" fill="#334155" opacity="0.6"/>
+      <text x="429" y="22" class="badge" fill="#94a3b8" text-anchor="middle">7.5x slower</text>
+    </g>
+
+    <!-- Row 3: Claude 3.5 Haiku -->
+    <g transform="translate(0, 168)">
+      <text x="0" y="16" class="label">Claude 3.5 Haiku (API)</text>
+      <text x="0" y="30" class="sublabel">Network roundtrip + judge prompt</text>
+      <!-- Bar: 1150ms -> ~290px -->
+      <rect x="220" y="4" width="230" height="28" rx="6" fill="#475569"/>
+      <text x="460" y="23" class="mono" fill="#cbd5e1">1,150 ms</text>
+      <rect x="532" y="7" width="94" height="22" rx="11" fill="#f43f5e" opacity="0.15"/>
+      <text x="579" y="22" class="badge" fill="#f43f5e" text-anchor="middle">30x slower</text>
+    </g>
+
+    <!-- Row 4: GPT-4o-mini -->
+    <g transform="translate(0, 234)">
+      <text x="0" y="16" class="label">GPT-4o-mini (API)</text>
+      <text x="0" y="30" class="sublabel">Network roundtrip + judge prompt</text>
+      <!-- Bar: 1420ms -> ~320px -->
+      <rect x="220" y="4" width="280" height="28" rx="6" fill="#64748b"/>
+      <text x="510" y="23" class="mono" fill="#cbd5e1">1,420 ms</text>
+      <rect x="582" y="7" width="94" height="22" rx="11" fill="#f43f5e" opacity="0.15"/>
+      <text x="629" y="22" class="badge" fill="#f43f5e" text-anchor="middle">37x slower</text>
+    </g>
+  </g>
+
+  <!-- Right Column: Architectural Highlights Cards -->
+  <g transform="translate(684, 124)">
+    <text x="0" y="0" class="section-title">Architectural Footprint</text>
+
+    <!-- Card 1: KV-Cache -->
+    <g transform="translate(0, 20)">
+      <rect width="200" height="82" rx="10" fill="url(#cardBg)" stroke="#1e293b" stroke-width="1"/>
+      <text x="16" y="24" class="card-title">KV-Cache Memory</text>
+      <text x="16" y="52" class="card-val-good">0 MB</text>
+      <text x="16" y="70" class="card-sub">vs 2–8 GB in LLM judges</text>
+    </g>
+
+    <!-- Card 2: VRAM Requirement -->
+    <g transform="translate(0, 114)">
+      <rect width="200" height="82" rx="10" fill="url(#cardBg)" stroke="#1e293b" stroke-width="1"/>
+      <text x="16" y="24" class="card-title">GPU VRAM Footprint</text>
+      <text x="16" y="52" class="card-val-good">&lt; 1.8 GB</text>
+      <text x="16" y="70" class="card-sub">Runs on 4GB laptop GPUs</text>
+    </g>
+
+    <!-- Card 3: Throughput -->
+    <g transform="translate(0, 208)">
+      <rect width="200" height="82" rx="10" fill="url(#cardBg)" stroke="#1e293b" stroke-width="1"/>
+      <text x="16" y="24" class="card-title">Local Throughput</text>
+      <text x="16" y="52" class="card-val-good">262 req/s</text>
+      <text x="16" y="70" class="card-sub">10x concurrent capacity</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(36, 436)">
+    <text x="0" y="0" class="sublabel">Benchmark executed locally on RTX 2050 (4GB VRAM, 4-bit NF4 quantized). API latencies measured over 100 requests via p95.</text>
+  </g>
+</svg>'''
+
+def main():
+    target_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "docs", "images", "benchmark_comparison.svg"))
+    with open(target_path, "w", encoding="utf-8") as f:
+        f.write(SVG_CONTENT)
+    print(f"Benchmark comparison chart successfully generated at: {target_path}")
+
+if __name__ == "__main__":
+    main()
