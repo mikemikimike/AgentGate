@@ -73,13 +73,13 @@ sequenceDiagram
 ### Component Breakdown
 
 * **Proxy (`proxy/`)**: Fastify-based HTTP proxy and policy engine implemented in TypeScript. Manages session lifecycles, parses context windows, evaluates deterministic rules, streams events via SSE, and exposes Prometheus metrics.
-* **Decision Engine (`decision/`)**: High-throughput FastAPI inference server. Runs a fine-tuned Qwen 0.8B multi-choice classification model via Unsloth. In development or non-GPU environments, automatically falls back to an integrated stub evaluator.
+* **Decision Engine (`decision/`)**: High-throughput FastAPI inference server. Runs a fine-tuned Qwen 0.8B multi-choice classification model via Unsloth ([`codeload/agentgate-qwen-0.8b`](https://huggingface.co/codeload/agentgate-qwen-0.8b)). In development or non-GPU environments, automatically falls back to an integrated stub evaluator.
 * **Storage (`postgres`)**: PostgreSQL 16 instance storing audit logs, evaluation traces, and approval state. Supports real-time dashboard subscriptions via `pg_notify`.
 * **Management Console (`dashboard/`)**: React 18 / Vite operator interface. Provides real-time event stream monitoring, a human-in-the-loop approvals desk, and offline policy replay against historic traffic.
 
 ---
 
-## Risk Classification Model
+## Risk Classification Model ([`codeload/agentgate-qwen-0.8b`](https://huggingface.co/codeload/agentgate-qwen-0.8b))
 
 Instead of relying on prompt-based LLM judges (which introduce 500–2000ms latency and remain susceptible to prompt injection), AgentGate evaluates tool invocations using a single forward pass across four calibrated classification heads:
 
