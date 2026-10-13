@@ -1,262 +1,122 @@
 #!/usr/bin/env python3
 """
-Generates a hand-drawn / pencil sketch style benchmark graph SVG.
-Uses SVG feTurbulence displacement to make lines look organic and rough.
-Light paper background, marker-style colored lines, no dark UI chrome.
+Generates benchmark graph using matplotlib xkcd() style.
+This produces genuinely hand-drawn looking curves with wobbly lines,
+hand-lettered fonts, and sketch aesthetics — not AI-polished SVG.
 """
 
 import os
+import sys
 
-SVG = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" width="100%" height="100%">
-  <defs>
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    import numpy as np
+except ImportError:
+    print("Installing matplotlib...")
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "matplotlib", "numpy", "--break-system-packages", "-q"])
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    import numpy as np
 
-    <!-- Paper texture background noise -->
-    <filter id="paper" x="0%" y="0%" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" result="noise"/>
-      <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise"/>
-      <feBlend in="SourceGraphic" in2="grayNoise" mode="multiply" result="blend"/>
-      <feComponentTransfer in="blend">
-        <feFuncR type="linear" slope="0.97" intercept="0.03"/>
-        <feFuncG type="linear" slope="0.97" intercept="0.03"/>
-        <feFuncB type="linear" slope="0.95" intercept="0.05"/>
-      </feComponentTransfer>
-    </filter>
-
-    <!-- Rough hand-drawn line displacement (light wobble) -->
-    <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" seed="2" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-
-    <!-- Rougher displacement for axis lines -->
-    <filter id="roughAxis" x="-2%" y="-2%" width="104%" height="104%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-
-    <!-- Pencil stroke for text labels (slight roughness) -->
-    <filter id="roughText" x="-2%" y="-5%" width="104%" height="115%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="5" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-
-  </defs>
-
-  <style>
-    .label { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 12px; fill: #2d2d2d; }
-    .title { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 16px; font-weight: bold; fill: #1a1a1a; }
-    .axis-num { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 11px; fill: #555; }
-    .legend { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 11.5px; fill: #222; }
-    .callout { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 11px; fill: #333; }
-    .end-label { font-family: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive, sans-serif; font-size: 12px; font-weight: bold; }
-  </style>
-
-  <!-- Paper background -->
-  <rect width="900" height="480" rx="8" fill="#fefdf5" filter="url(#paper)" stroke="#c8c0a8" stroke-width="1.5"/>
-
-  <!-- Title -->
-  <text x="80" y="32" class="title">p95 Latency vs. Concurrent Request Load</text>
-  <text x="80" y="50" class="label" font-size="11" fill="#666">authorization overhead · single forward pass vs autoregressive token generation</text>
-
-  <!-- =================== LEGEND =================== -->
-  <!-- AgentGate -->
-  <line x1="80" y1="70" x2="104" y2="70" stroke="#22c55e" stroke-width="3" stroke-linecap="round" filter="url(#rough)"/>
-  <circle cx="92" cy="70" r="4" fill="#22c55e" stroke="#fff" stroke-width="1.5"/>
-  <text x="110" y="74" class="legend" fill="#166534">AgentGate (0.8B Clef)</text>
-  <text x="255" y="74" class="legend" fill="#166534" font-weight="bold">~38ms</text>
-
-  <!-- Llama Guard -->
-  <line x1="300" y1="70" x2="324" y2="70" stroke="#8b5cf6" stroke-width="3" stroke-linecap="round" filter="url(#rough)"/>
-  <circle cx="312" cy="70" r="4" fill="#8b5cf6" stroke="#fff" stroke-width="1.5"/>
-  <text x="330" y="74" class="legend" fill="#5b21b6">Llama Guard 3 (1B vLLM)</text>
-  <text x="488" y="74" class="legend" fill="#5b21b6" font-weight="bold">285ms+</text>
-
-  <!-- Claude -->
-  <line x1="548" y1="70" x2="572" y2="70" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" filter="url(#rough)"/>
-  <circle cx="560" cy="70" r="4" fill="#f59e0b" stroke="#fff" stroke-width="1.5"/>
-  <text x="578" y="74" class="legend" fill="#92400e">Claude 3.5 Haiku</text>
-  <text x="700" y="74" class="legend" fill="#92400e" font-weight="bold">1,150ms+</text>
-
-  <!-- GPT -->
-  <line x1="760" y1="70" x2="784" y2="70" stroke="#ef4444" stroke-width="3" stroke-linecap="round" filter="url(#rough)"/>
-  <circle cx="772" cy="70" r="4" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>
-  <text x="790" y="74" class="legend" fill="#991b1b">GPT-4o-mini</text>
-
-  <!-- =================== GRID + AXES =================== -->
-  <!-- Plot area: X=80..810, Y=90..410. Height=320px for 2500ms → 0.128px/ms. Y = 410 - (ms*0.128) -->
-  <!-- X coords: 1req=110, 10=220, 25=340, 50=470, 75=600, 100=730 -->
-
-  <!-- Y-axis grid lines (dashed, hand-drawn) -->
-  <!-- 2500ms → Y=90 -->
-  <line x1="80" y1="90" x2="810" y2="90" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
-  <!-- 2000ms → Y=154 -->
-  <line x1="80" y1="154" x2="810" y2="154" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
-  <!-- 1500ms → Y=218 -->
-  <line x1="80" y1="218" x2="810" y2="218" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
-  <!-- 1000ms → Y=282 -->
-  <line x1="80" y1="282" x2="810" y2="282" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
-  <!-- 500ms → Y=346 -->
-  <line x1="80" y1="346" x2="810" y2="346" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5" filter="url(#roughAxis)"/>
-  <!-- 0ms → Y=410 (base) -->
-
-  <!-- Y axis labels -->
-  <text x="68" y="94" class="axis-num" text-anchor="end">2500ms</text>
-  <text x="68" y="158" class="axis-num" text-anchor="end">2000ms</text>
-  <text x="68" y="222" class="axis-num" text-anchor="end">1500ms</text>
-  <text x="68" y="286" class="axis-num" text-anchor="end">1000ms</text>
-  <text x="68" y="350" class="axis-num" text-anchor="end">500ms</text>
-  <text x="68" y="414" class="axis-num" text-anchor="end">0ms</text>
-
-  <!-- X-axis base line (hand-drawn, slightly rough) -->
-  <line x1="80" y1="410" x2="810" y2="410" stroke="#333" stroke-width="2" stroke-linecap="round" filter="url(#roughAxis)"/>
-  <!-- Y-axis left line -->
-  <line x1="80" y1="88" x2="80" y2="412" stroke="#333" stroke-width="2" stroke-linecap="round" filter="url(#roughAxis)"/>
-
-  <!-- X tick marks and labels -->
-  <!-- 1 req  → x=110 -->
-  <line x1="110" y1="408" x2="110" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
-  <text x="110" y="430" class="axis-num" text-anchor="middle">1 req</text>
-
-  <!-- 10 reqs → x=220 -->
-  <line x1="220" y1="408" x2="220" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
-  <text x="220" y="430" class="axis-num" text-anchor="middle">10</text>
-
-  <!-- 25 reqs → x=340 -->
-  <line x1="340" y1="408" x2="340" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
-  <text x="340" y="430" class="axis-num" text-anchor="middle">25</text>
-
-  <!-- 50 reqs → x=470 -->
-  <line x1="470" y1="408" x2="470" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
-  <text x="470" y="430" class="axis-num" text-anchor="middle">50</text>
-
-  <!-- 75 reqs → x=600 -->
-  <line x1="600" y1="408" x2="600" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
-  <text x="600" y="430" class="axis-num" text-anchor="middle">75</text>
-
-  <!-- 100 reqs → x=730 -->
-  <line x1="730" y1="408" x2="730" y2="416" stroke="#333" stroke-width="1.5" filter="url(#roughAxis)"/>
-  <text x="730" y="430" class="axis-num" text-anchor="middle">100 reqs</text>
-
-  <!-- X-axis title -->
-  <text x="445" y="458" class="label" text-anchor="middle" fill="#555">concurrent tool calls (load) →</text>
-
-  <!-- =================== LINES (hand-drawn with displacement) =================== -->
-
-  <!-- Y = 410 - (ms * 0.128) -->
-  <!-- GPT-4o-mini [RED]:
-       110: 1420 → 228.6
-       220: 1480 → 220.6
-       340: 1650 → 199.2
-       470: 1900 → 167.2
-       600: 2200 → 128.8
-       730: 2480 → 93.0
-  -->
-  <path d="M 110 228.6 C 165 224, 185 221, 220 220.6
-           C 275 212, 300 204, 340 199.2
-           C 398 186, 428 175, 470 167.2
-           C 528 152, 558 138, 600 128.8
-           C 658 115, 686 101, 730 93.0"
-        fill="none" stroke="#ef4444" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"
-        filter="url(#rough)"/>
-  <!-- GPT dots -->
-  <circle cx="110" cy="228.6" r="4" fill="#ef4444" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="340" cy="199.2" r="4" fill="#ef4444" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="730" cy="93.0" r="5" fill="#ef4444" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <text x="742" y="96" class="end-label" fill="#ef4444">2,480ms</text>
-
-  <!-- Claude 3.5 Haiku [AMBER]:
-       110: 1150 → 262.8
-       220: 1220 → 253.8
-       340: 1380 → 233.2
-       470: 1620 → 202.6
-       600: 1880 → 169.4
-       730: 2150 → 134.8
-  -->
-  <path d="M 110 262.8 C 165 258, 185 255, 220 253.8
-           C 275 246, 300 238, 340 233.2
-           C 398 222, 428 210, 470 202.6
-           C 528 188, 558 178, 600 169.4
-           C 658 155, 686 143, 730 134.8"
-        fill="none" stroke="#f59e0b" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"
-        filter="url(#rough)"/>
-  <!-- Claude dots -->
-  <circle cx="110" cy="262.8" r="4" fill="#f59e0b" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="340" cy="233.2" r="4" fill="#f59e0b" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="730" cy="134.8" r="5" fill="#f59e0b" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <text x="742" y="138" class="end-label" fill="#b45309">2,150ms</text>
-
-  <!-- Llama Guard 3 [PURPLE]:
-       110: 285  → 373.5
-       220: 340  → 366.5
-       340: 510  → 344.7
-       470: 740  → 315.3
-       600: 1040 → 276.9
-       730: 1350 → 237.2
-  -->
-  <path d="M 110 373.5 C 165 369, 185 367, 220 366.5
-           C 275 358, 300 351, 340 344.7
-           C 398 334, 428 323, 470 315.3
-           C 528 302, 558 288, 600 276.9
-           C 658 262, 686 248, 730 237.2"
-        fill="none" stroke="#8b5cf6" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"
-        filter="url(#rough)"/>
-  <!-- Llama dots -->
-  <circle cx="110" cy="373.5" r="4" fill="#8b5cf6" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="340" cy="344.7" r="4" fill="#8b5cf6" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="730" cy="237.2" r="5" fill="#8b5cf6" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <text x="742" y="241" class="end-label" fill="#5b21b6">1,350ms</text>
-
-  <!-- AgentGate [GREEN - near flat]:
-       110: 32ms → 405.9
-       220: 34ms → 405.6
-       340: 38ms → 405.1
-       470: 44ms → 404.4
-       600: 51ms → 403.5
-       730: 58ms → 402.6
-  -->
-  <path d="M 110 405.9 C 165 405.8, 185 405.7, 220 405.6
-           C 275 405.3, 300 405.1, 340 405.1
-           C 398 404.8, 428 404.5, 470 404.4
-           C 528 404.0, 558 403.7, 600 403.5
-           C 658 403.1, 686 402.8, 730 402.6"
-        fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
-        filter="url(#rough)"/>
-  <!-- AgentGate dots (all shown since it's nearly flat) -->
-  <circle cx="110" cy="405.9" r="4.5" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="220" cy="405.6" r="4" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="340" cy="405.1" r="4" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="470" cy="404.4" r="4" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="600" cy="403.5" r="4" fill="#22c55e" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <circle cx="730" cy="402.6" r="5" fill="#16a34a" stroke="#fefdf5" stroke-width="2" filter="url(#rough)"/>
-  <text x="742" y="406" class="end-label" fill="#166534">58ms</text>
-
-  <!-- =================== CALLOUT: AgentGate flat line =================== -->
-  <g transform="translate(320, 360)" filter="url(#roughText)">
-    <rect x="0" y="0" width="172" height="36" rx="5" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
-    <text x="10" y="15" class="callout" fill="#166534" font-weight="bold">flat line — single forward pass</text>
-    <text x="10" y="28" class="callout" fill="#166534">no KV-cache · no autoregression</text>
-    <!-- Arrow down to line -->
-    <line x1="86" y1="36" x2="86" y2="44" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="3,2"/>
-    <polygon points="83,44 89,44 86,49" fill="#22c55e"/>
-  </g>
-
-  <!-- =================== CALLOUT: autoregressive divergence =================== -->
-  <g transform="translate(490, 88)" filter="url(#roughText)">
-    <rect x="0" y="0" width="180" height="36" rx="5" fill="#fef9c3" stroke="#f59e0b" stroke-width="1.5"/>
-    <text x="10" y="15" class="callout" fill="#854d0e" font-weight="bold">sequential token decoding</text>
-    <text x="10" y="28" class="callout" fill="#854d0e">latency grows with queue depth</text>
-  </g>
-
-</svg>'''
 
 def main():
-    target_docs = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "docs", "images", "benchmark_graph.svg"))
-    target_hf = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "decision", "qwen-decisions", "benchmark_graph.svg"))
+    x = np.array([1, 10, 25, 50, 75, 100])
 
-    for target in [target_docs, target_hf]:
-        with open(target, "w", encoding="utf-8") as f:
-            f.write(SVG)
-        print(f"Generated: {target}")
+    # p95 latency in ms for each system at each concurrency level
+    agentgate  = np.array([32,  34,  38,  44,  51,  58])
+    llama      = np.array([285, 340, 510, 740, 1040, 1350])
+    claude     = np.array([1150, 1220, 1380, 1620, 1880, 2150])
+    gpt        = np.array([1420, 1480, 1650, 1900, 2200, 2480])
+
+    with plt.xkcd(scale=1.2, length=150, randomness=2):
+        fig, ax = plt.subplots(figsize=(11, 5.5))
+        fig.patch.set_facecolor("#fafafa")
+        ax.set_facecolor("#fafafa")
+
+        # Plot lines
+        ax.plot(x, gpt,       color="#e53e3e", linewidth=2.2, label="GPT-4o-mini (API)")
+        ax.plot(x, claude,    color="#d97706", linewidth=2.2, label="Claude 3.5 Haiku (API)")
+        ax.plot(x, llama,     color="#7c3aed", linewidth=2.2, label="Llama Guard 3 (1B vLLM)")
+        ax.plot(x, agentgate, color="#16a34a", linewidth=2.8, label="AgentGate (0.8B Clef)")
+
+        # Data point markers
+        ax.scatter(x, gpt,       color="#e53e3e", s=40, zorder=5)
+        ax.scatter(x, claude,    color="#d97706", s=40, zorder=5)
+        ax.scatter(x, llama,     color="#7c3aed", s=40, zorder=5)
+        ax.scatter(x, agentgate, color="#16a34a", s=55, zorder=5)
+
+        # End-point callout labels
+        ax.annotate("2,480ms", xy=(100, 2480), xytext=(102, 2430),
+                    fontsize=9, color="#e53e3e", fontweight="bold")
+        ax.annotate("2,150ms", xy=(100, 2150), xytext=(102, 2090),
+                    fontsize=9, color="#d97706", fontweight="bold")
+        ax.annotate("1,350ms", xy=(100, 1350), xytext=(102, 1290),
+                    fontsize=9, color="#7c3aed", fontweight="bold")
+        ax.annotate("58ms",    xy=(100, 58),   xytext=(102, 130),
+                    fontsize=9, color="#16a34a", fontweight="bold",
+                    arrowprops=dict(arrowstyle="->", color="#16a34a", lw=1.2))
+
+        # Annotation: AgentGate flatline
+        ax.annotate(
+            "flat line — single forward pass\nno KV-cache, no autoregression",
+            xy=(50, 44), xytext=(30, 350),
+            fontsize=9, color="#166534",
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="#dcfce7", edgecolor="#16a34a", lw=1.2),
+            arrowprops=dict(arrowstyle="->", color="#16a34a", lw=1.2,
+                            connectionstyle="arc3,rad=0.2")
+        )
+
+        # Annotation: divergence label
+        ax.annotate(
+            "sequential token decoding\nlatency scales with load",
+            xy=(75, 2200), xytext=(42, 2050),
+            fontsize=9, color="#92400e",
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="#fef9c3", edgecolor="#d97706", lw=1.2),
+            arrowprops=dict(arrowstyle="->", color="#d97706", lw=1.2,
+                            connectionstyle="arc3,rad=-0.2")
+        )
+
+        # Axis labels + title
+        ax.set_xlabel("Concurrent Tool Calls (Load)", fontsize=11, labelpad=8)
+        ax.set_ylabel("p95 Latency (ms)", fontsize=11, labelpad=8)
+        ax.set_title("p95 Latency vs. Concurrent Request Load", fontsize=14, pad=14)
+
+        # Axis ticks
+        ax.set_xticks([1, 10, 25, 50, 75, 100])
+        ax.set_xlim(0, 112)
+        ax.set_ylim(-50, 2700)
+        ax.set_yticks([0, 500, 1000, 1500, 2000, 2500])
+        ax.yaxis.set_major_formatter(
+            matplotlib.ticker.FuncFormatter(lambda v, _: f"{int(v):,}ms")
+        )
+
+        # Legend
+        ax.legend(loc="upper left", fontsize=9.5, framealpha=0.7,
+                  edgecolor="#ccc", facecolor="#fafafa")
+
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+        plt.tight_layout()
+
+        target_docs = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "docs", "images", "benchmark_graph.svg")
+        )
+        target_hf = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "decision", "qwen-decisions", "benchmark_graph.svg")
+        )
+
+        plt.savefig(target_docs, format="svg", bbox_inches="tight", dpi=150)
+        plt.savefig(target_hf,   format="svg", bbox_inches="tight", dpi=150)
+        print(f"Generated: {target_docs}")
+        print(f"Generated: {target_hf}")
+
 
 if __name__ == "__main__":
     main()
