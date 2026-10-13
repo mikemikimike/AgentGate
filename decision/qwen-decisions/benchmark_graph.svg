@@ -1,0 +1,274 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 520" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1d"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+
+    <!-- AgentGate Area Glow Gradient -->
+    <linearGradient id="agentgateArea" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <!-- Line Gradients -->
+    <linearGradient id="lineAgentGate" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+    <linearGradient id="lineLlama" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a5b4fc"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="lineClaude" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="lineGpt" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fda4af"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
+
+    <!-- Glow Drop Shadows -->
+    <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#10b981" flood-opacity="0.6"/>
+    </filter>
+    <filter id="glowPurple" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#818cf8" flood-opacity="0.5"/>
+    </filter>
+    <filter id="glowOrange" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#f59e0b" flood-opacity="0.5"/>
+    </filter>
+    <filter id="glowRed" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#f43f5e" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <style>
+    .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 19px; font-weight: 800; fill: #f8fafc; letter-spacing: -0.3px; }
+    .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; fill: #94a3b8; }
+    .badge-bg { rx: 6px; fill: #064e3b; stroke: #10b981; stroke-width: 1px; }
+    .badge-text { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; fill: #34d399; font-weight: 700; }
+    .axis-label { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; fill: #64748b; font-weight: 500; }
+    .legend-name { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11.5px; font-weight: 600; fill: #cbd5e1; }
+    .legend-val { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; font-weight: 700; }
+    .point-tag { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; font-weight: 700; }
+    .callout-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11.5px; font-weight: 700; }
+    .callout-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 10px; fill: #94a3b8; }
+  </style>
+
+  <!-- Outer Card Frame -->
+  <rect width="980" height="520" rx="16" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- Header Section -->
+  <g transform="translate(36, 32)">
+    <circle cx="10" cy="10" r="10" fill="#10b981" opacity="0.2"/>
+    <circle cx="10" cy="10" r="4.5" fill="#10b981"/>
+    <text x="30" y="15" class="title">p95 Latency vs. Concurrent Request Load</text>
+    <text x="30" y="34" class="subtitle">Tool authorization overhead under scaling multi-agent traffic (single forward pass vs autoregressive generation)</text>
+    
+    <!-- Budget Badge -->
+    <g transform="translate(730, -2)">
+      <rect width="170" height="26" class="badge-bg"/>
+      <text x="85" y="17" class="badge-text" text-anchor="middle">⚡ Budget: &lt; 50ms</text>
+    </g>
+  </g>
+
+  <!-- Interactive Legend Bar -->
+  <g transform="translate(40, 88)">
+    <!-- 1. AgentGate -->
+    <g transform="translate(0, 0)">
+      <circle cx="6" cy="6" r="5" fill="#10b981"/>
+      <text x="18" y="10" class="legend-name">AgentGate (0.8B Clef)</text>
+      <text x="172" y="10" class="legend-val" fill="#10b981">~38ms</text>
+    </g>
+    <!-- 2. Llama Guard 3 -->
+    <g transform="translate(235, 0)">
+      <circle cx="6" cy="6" r="5" fill="#818cf8"/>
+      <text x="18" y="10" class="legend-name">Llama Guard 3 (1B vLLM)</text>
+      <text x="175" y="10" class="legend-val" fill="#818cf8">285ms+</text>
+    </g>
+    <!-- 3. Claude 3.5 Haiku -->
+    <g transform="translate(480, 0)">
+      <circle cx="6" cy="6" r="5" fill="#f59e0b"/>
+      <text x="18" y="10" class="legend-name">Claude 3.5 Haiku (API)</text>
+      <text x="165" y="10" class="legend-val" fill="#f59e0b">1,150ms+</text>
+    </g>
+    <!-- 4. GPT-4o-mini -->
+    <g transform="translate(710, 0)">
+      <circle cx="6" cy="6" r="5" fill="#f43f5e"/>
+      <text x="18" y="10" class="legend-name">GPT-4o-mini (API)</text>
+      <text x="140" y="10" class="legend-val" fill="#f43f5e">1,420ms+</text>
+    </g>
+  </g>
+
+  <!-- ==================== PLOT COORDINATE SYSTEM ==================== -->
+  <!-- Left Axis X = 100, Right Plot Limit X = 840, Y Base = 430, Y Top = 150 -->
+  <!-- Height = 280px for 2500ms range -> Scale: 0.112 px/ms. Y = 430 - (ms * 0.112) -->
+  <!-- X Coordinates:
+       1 req   = 130
+       10 reqs = 250
+       25 reqs = 390
+       50 reqs = 530
+       75 reqs = 670
+       100 reqs= 810
+  -->
+
+  <!-- Horizontal Grid Lines & Y Axis Labels -->
+  <!-- 2500ms -> Y = 150 -->
+  <line x1="100" y1="150" x2="840" y2="150" stroke="#1e293b" stroke-dasharray="4 4"/>
+  <text x="86" y="154" class="axis-label" text-anchor="end">2500ms</text>
+
+  <!-- 2000ms -> Y = 206 -->
+  <line x1="100" y1="206" x2="840" y2="206" stroke="#1e293b" stroke-dasharray="4 4"/>
+  <text x="86" y="210" class="axis-label" text-anchor="end">2000ms</text>
+
+  <!-- 1500ms -> Y = 262 -->
+  <line x1="100" y1="262" x2="840" y2="262" stroke="#1e293b" stroke-dasharray="4 4"/>
+  <text x="86" y="266" class="axis-label" text-anchor="end">1500ms</text>
+
+  <!-- 1000ms -> Y = 318 -->
+  <line x1="100" y1="318" x2="840" y2="318" stroke="#1e293b" stroke-dasharray="4 4"/>
+  <text x="86" y="322" class="axis-label" text-anchor="end">1000ms</text>
+
+  <!-- 500ms -> Y = 374 -->
+  <line x1="100" y1="374" x2="840" y2="374" stroke="#1e293b" stroke-dasharray="4 4"/>
+  <text x="86" y="378" class="axis-label" text-anchor="end">500ms</text>
+
+  <!-- 0ms -> Y = 430 (Base Line) -->
+  <line x1="100" y1="430" x2="840" y2="430" stroke="#334155" stroke-width="1.5"/>
+  <text x="86" y="434" class="axis-label" text-anchor="end">0ms</text>
+
+  <!-- Y Axis Boundary -->
+  <line x1="100" y1="140" x2="100" y2="430" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Vertical Grid Lines & X Axis Ticks -->
+  <g class="axis-label" text-anchor="middle">
+    <!-- 1 req -->
+    <line x1="130" y1="150" x2="130" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
+    <line x1="130" y1="430" x2="130" y2="436" stroke="#64748b" stroke-width="1.5"/>
+    <text x="130" y="455">1 req</text>
+
+    <!-- 10 reqs -->
+    <line x1="250" y1="150" x2="250" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
+    <line x1="250" y1="430" x2="250" y2="436" stroke="#64748b" stroke-width="1.5"/>
+    <text x="250" y="455">10 reqs</text>
+
+    <!-- 25 reqs -->
+    <line x1="390" y1="150" x2="390" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
+    <line x1="390" y1="430" x2="390" y2="436" stroke="#64748b" stroke-width="1.5"/>
+    <text x="390" y="455">25 reqs</text>
+
+    <!-- 50 reqs -->
+    <line x1="530" y1="150" x2="530" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
+    <line x1="530" y1="430" x2="530" y2="436" stroke="#64748b" stroke-width="1.5"/>
+    <text x="530" y="455">50 reqs</text>
+
+    <!-- 75 reqs -->
+    <line x1="670" y1="150" x2="670" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
+    <line x1="670" y1="430" x2="670" y2="436" stroke="#64748b" stroke-width="1.5"/>
+    <text x="670" y="455">75 reqs</text>
+
+    <!-- 100 reqs -->
+    <line x1="810" y1="150" x2="810" y2="430" stroke="#1e293b" stroke-dasharray="3 3"/>
+    <line x1="810" y1="430" x2="810" y2="436" stroke="#64748b" stroke-width="1.5"/>
+    <text x="810" y="455">100 reqs</text>
+  </g>
+
+  <!-- ================= LINE 4: GPT-4o-mini (API) [RED / ROSE] ================= -->
+  <!-- 130: 1420ms -> Y = 430 - 159.0 = 271.0
+       250: 1480ms -> Y = 430 - 165.8 = 264.2
+       390: 1650ms -> Y = 430 - 184.8 = 245.2
+       530: 1900ms -> Y = 430 - 212.8 = 217.2
+       670: 2200ms -> Y = 430 - 246.4 = 183.6
+       810: 2480ms -> Y = 430 - 277.8 = 152.2
+  -->
+  <path d="M 130 271.0 C 190 268, 210 265, 250 264.2 C 310 255, 340 249, 390 245.2 C 455 233, 485 223, 530 217.2 C 595 203, 625 190, 670 183.6 C 730 171, 760 158, 810 152.2"
+        fill="none" stroke="url(#lineGpt)" stroke-width="3" stroke-linecap="round" filter="url(#glowRed)"/>
+
+  <!-- ================= LINE 3: Claude 3.5 Haiku (API) [AMBER / ORANGE] ================= -->
+  <!-- 130: 1150ms -> Y = 430 - 128.8 = 301.2
+       250: 1220ms -> Y = 430 - 136.6 = 293.4
+       390: 1380ms -> Y = 430 - 154.6 = 275.4
+       530: 1620ms -> Y = 430 - 181.4 = 248.6
+       670: 1880ms -> Y = 430 - 210.6 = 219.4
+       810: 2150ms -> Y = 430 - 240.8 = 189.2
+  -->
+  <path d="M 130 301.2 C 190 297, 210 294, 250 293.4 C 310 285, 340 280, 390 275.4 C 455 264, 485 253, 530 248.6 C 595 233, 625 225, 670 219.4 C 730 207, 760 196, 810 189.2"
+        fill="none" stroke="url(#lineClaude)" stroke-width="3" stroke-linecap="round" filter="url(#glowOrange)"/>
+
+  <!-- ================= LINE 2: Llama Guard 3 1B (vLLM) [INDIGO / PURPLE] ================= -->
+  <!-- 130: 285ms  -> Y = 430 - 31.9  = 398.1
+       250: 340ms  -> Y = 430 - 38.1  = 391.9
+       390: 510ms  -> Y = 430 - 57.1  = 372.9
+       530: 740ms  -> Y = 430 - 82.9  = 347.1
+       670: 1040ms -> Y = 430 - 116.5 = 313.5
+       810: 1350ms -> Y = 430 - 151.2 = 278.8
+  -->
+  <path d="M 130 398.1 C 190 395, 210 393, 250 391.9 C 310 384, 340 378, 390 372.9 C 455 362, 485 352, 530 347.1 C 595 332, 625 321, 670 313.5 C 730 298, 760 287, 810 278.8"
+        fill="none" stroke="url(#lineLlama)" stroke-width="3" stroke-linecap="round" filter="url(#glowPurple)"/>
+
+  <!-- ================= LINE 1: AgentGate Qwen 0.8B [EMERALD GREEN] ================= -->
+  <!-- 130: 32ms -> Y = 430 - 3.6 = 426.4
+       250: 34ms -> Y = 430 - 3.8 = 426.2
+       390: 38ms -> Y = 430 - 4.3 = 425.7
+       530: 44ms -> Y = 430 - 4.9 = 425.1
+       670: 51ms -> Y = 430 - 5.7 = 424.3
+       810: 58ms -> Y = 430 - 6.5 = 423.5
+  -->
+  <!-- Shaded Glowing Area under AgentGate -->
+  <path d="M 130 426.4 C 190 426.3, 210 426.2, 250 426.2 C 310 425.9, 340 425.7, 390 425.7 C 455 425.4, 485 425.1, 530 425.1 C 595 424.6, 625 424.3, 670 424.3 C 730 423.9, 760 423.5, 810 423.5 L 810 430 L 130 430 Z"
+        fill="url(#agentgateArea)"/>
+
+  <path d="M 130 426.4 C 190 426.3, 210 426.2, 250 426.2 C 310 425.9, 340 425.7, 390 425.7 C 455 425.4, 485 425.1, 530 425.1 C 595 424.6, 625 424.3, 670 424.3 C 730 423.9, 760 423.5, 810 423.5"
+        fill="none" stroke="url(#lineAgentGate)" stroke-width="3.5" stroke-linecap="round" filter="url(#glowGreen)"/>
+
+  <!-- Data Point Markers (Dots) -->
+  <!-- GPT Dots -->
+  <circle cx="130" cy="271.0" r="4" fill="#fb7185" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="390" cy="245.2" r="4" fill="#fb7185" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="810" cy="152.2" r="4.5" fill="#fb7185" stroke="#090d16" stroke-width="1.5"/>
+  <text x="825" y="156" class="point-tag" fill="#fb7185">2,480ms</text>
+
+  <!-- Claude Dots -->
+  <circle cx="130" cy="301.2" r="4" fill="#f59e0b" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="390" cy="275.4" r="4" fill="#f59e0b" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="810" cy="189.2" r="4.5" fill="#f59e0b" stroke="#090d16" stroke-width="1.5"/>
+  <text x="825" y="193" class="point-tag" fill="#f59e0b">2,150ms</text>
+
+  <!-- Llama Guard Dots -->
+  <circle cx="130" cy="398.1" r="4" fill="#818cf8" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="390" cy="372.9" r="4" fill="#818cf8" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="810" cy="278.8" r="4.5" fill="#818cf8" stroke="#090d16" stroke-width="1.5"/>
+  <text x="825" y="282" class="point-tag" fill="#818cf8">1,350ms</text>
+
+  <!-- AgentGate Dots -->
+  <circle cx="130" cy="426.4" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="250" cy="426.2" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="390" cy="425.7" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="530" cy="425.1" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="670" cy="424.3" r="4.5" fill="#34d399" stroke="#090d16" stroke-width="1.5"/>
+  <circle cx="810" cy="423.5" r="5.5" fill="#10b981" stroke="#090d16" stroke-width="2"/>
+  <text x="825" y="426" class="point-tag" fill="#10b981">58ms</text>
+
+  <!-- Callout Card: AgentGate Sub-40ms Flatline -->
+  <g transform="translate(340, 348)">
+    <rect width="216" height="52" rx="8" fill="#064e3b" fill-opacity="0.85" stroke="#10b981" stroke-width="1.2"/>
+    <text x="14" y="21" class="callout-title" fill="#34d399">⚡ Sub-40ms Baseline Flatline</text>
+    <text x="14" y="37" class="callout-sub">Single Forward Pass • 0 KV-Cache</text>
+    <path d="M 108 52 L 108 65" stroke="#10b981" stroke-width="1.5" stroke-dasharray="2 2"/>
+    <polygon points="105,65 111,65 108,70" fill="#10b981"/>
+  </g>
+
+  <!-- Callout Card: Autoregressive LLM Judges -->
+  <g transform="translate(530, 140)">
+    <rect width="210" height="46" rx="8" fill="#1e1b4b" fill-opacity="0.88" stroke="#6366f1" stroke-width="1"/>
+    <text x="12" y="19" class="callout-title" fill="#a5b4fc">Sequential Token Decoding</text>
+    <text x="12" y="34" class="callout-sub">KV-cache memory bloat under load</text>
+  </g>
+
+  <!-- X Axis Title -->
+  <text x="470" y="492" class="axis-label" text-anchor="middle" fill="#94a3b8" font-size="12px">Concurrent Tool Calls from Agent Fleet (Load) →</text>
+</svg>

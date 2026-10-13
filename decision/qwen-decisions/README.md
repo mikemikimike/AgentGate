@@ -40,6 +40,10 @@ Traditional AI agent guardrails use "LLM-as-a-judge" (e.g., prompting a 7B+ mode
 | **Hallucination Risk** | High (invented rationales, uncalibrated scores) | **Zero text hallucination** (pure probability distribution) |
 | **Prompt Injection Defense** | Vulnerable (instructions inside payload override prompt) | **High** (scores semantic alignment without executing instructions) |
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mohitdebian/AgentGate/main/docs/images/benchmark_graph.svg" alt="AgentGate Latency vs Concurrent Load Benchmark" width="100%">
+</p>
+
 ---
 
 ## Calibrated Decision Heads
