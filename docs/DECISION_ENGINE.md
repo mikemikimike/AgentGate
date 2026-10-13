@@ -61,3 +61,28 @@ To train the model on your local NVIDIA GPU:
 The FastAPI decision server (`decision/src/app.py`) dynamically wraps the model:
 * When `USE_UNSLOTH=1`: Loads the fine-tuned model via `FastDecisionModel.from_pretrained()` and executes inference through a background threadpool to avoid blocking FastAPI's async event loop.
 * When `USE_UNSLOTH=0`: Falls back to `StubModel`, simulating calibrated distributions with 40ms sleep for rapid local prototyping without requiring a GPU.
+
+---
+
+## 5. Hugging Face Hub Integration
+
+The trained model checkpoint and Clef classification heads are published on Hugging Face Hub:
+* **Hugging Face Repository**: [`codeload/agentgate-qwen-0.8b`](https://huggingface.co/codeload/agentgate-qwen-0.8b)
+
+To run the decision service against the remote Hugging Face weights:
+```bash
+export USE_UNSLOTH=1
+export DECISION_MODEL_PATH="codeload/agentgate-qwen-0.8b"
+```
+
+To test standalone inference with Unsloth:
+```python
+from unsloth import FastDecisionModel
+
+model, tokenizer = FastDecisionModel.from_pretrained(
+    "codeload/agentgate-qwen-0.8b",
+    max_seq_length=2048,
+    load_in_4bit=True,
+)
+FastDecisionModel.for_inference(model)
+```

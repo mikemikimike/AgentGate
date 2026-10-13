@@ -292,6 +292,18 @@ export function DocsPage() {
             </p>
             <CodeBlock code="/home/mohit/projects/agentgate/decision/.venv_unsloth/bin/python decision/train_decision_model.py" />
           </div>
+
+          <div className="space-y-8">
+            <h3 className="text-[15px] font-semibold text-tx">Hugging Face Hub Weights</h3>
+            <p className="text-[12.5px] text-t2">
+              The fine-tuned checkpoint is published at{' '}
+              <a href="https://huggingface.co/codeload/agentgate-qwen-0.8b" target="_blank" rel="noreferrer" className="text-at underline">
+                codeload/agentgate-qwen-0.8b
+              </a>
+              . Pull weights directly into the decision server:
+            </p>
+            <CodeBlock code="export DECISION_MODEL_PATH=&quot;codeload/agentgate-qwen-0.8b&quot;" />
+          </div>
         </div>
       )
     },
