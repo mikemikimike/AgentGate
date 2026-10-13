@@ -5,12 +5,17 @@
 [![Docker](https://img.shields.io/badge/Docker-Verified-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](decision/)
 [![Node.js 22+](https://img.shields.io/badge/Node.js-22+-339933?logo=node.js&logoColor=white)](proxy/)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-agentgate--qwen--0.8b-yellow)](https://huggingface.co/codeload/agentgate-qwen-0.8b)
+[![Hugging Face Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-agentgate--qwen--0.8b-yellow)](https://huggingface.co/codeload/agentgate-qwen-0.8b)
+[![Live Demo](https://img.shields.io/badge/%F0%9F%9B%A1%EF%B8%8F%20Live%20Demo-Hugging%20Face%20Space-blue)](https://huggingface.co/spaces/codeload/agentgate-demo)
 
 AgentGate is an out-of-process authorization proxy and security gateway for autonomous AI agent tool execution. It intercepts tool invocations prior to runtime, evaluates prompt injection and blast-radius risks via a sub-40ms neural classification head, and enforces deterministic access control policies before actions reach production infrastructure.
 
 <p align="center">
   <img src="docs/images/demo.gif" alt="AgentGate Terminal Demo" width="100%">
+</p>
+
+<p align="center">
+  <strong>🎮 Live Interactive Playground:</strong> <a href="https://huggingface.co/spaces/codeload/agentgate-demo">https://huggingface.co/spaces/codeload/agentgate-demo</a>
 </p>
 
 ---
