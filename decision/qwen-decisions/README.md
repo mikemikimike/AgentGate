@@ -45,7 +45,7 @@ from unsloth import FastDecisionModel
 
 # 1. Load model with 4-bit quantization (< 2 GB VRAM)
 model, tokenizer = FastDecisionModel.from_pretrained(
-    "mohitdebian/agentgate-qwen-0.8b", # or local path
+    "codeload/agentgate-qwen-0.8b", # or local path
     max_seq_length=2048,
     load_in_4bit=True
 )
@@ -62,7 +62,7 @@ questions = {
     "untrusted_influence": {"type": "choice", "options": ["none", "possible", "likely"]},
     "goal_alignment": {"type": "choice", "options": ["aligned", "tangential", "misaligned"]},
     "reversibility": {"type": "choice", "options": ["reversible", "costly", "irreversible"]},
-    "external_send": {"type": "noul"}
+    "external_send": {"type": "yes/no"}
 }
 
 # 3. Single forward pass prediction (<38ms p95)

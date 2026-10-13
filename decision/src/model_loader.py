@@ -24,6 +24,8 @@ class UnslothDecisionModel:
                     local_default = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "qwen-decisions"))
                     if os.path.exists(local_default):
                         custom_checkpoint = local_default
+                    else:
+                        custom_checkpoint = "codeload/agentgate-qwen-0.8b"
 
                 if custom_checkpoint and os.path.exists(custom_checkpoint):
                     load_path = custom_checkpoint

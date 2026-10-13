@@ -7,7 +7,7 @@ from `decision/qwen-decisions/` to Hugging Face Hub.
 
 Usage:
     export HF_TOKEN="your_huggingface_token"
-    python decision/upload_to_hf.py --repo mohitdebian/agentgate-qwen-0.8b
+    python decision/upload_to_hf.py --repo codeload/agentgate-qwen-0.8b
 """
 
 import argparse
@@ -17,7 +17,7 @@ import sys
 
 def main():
     parser = argparse.ArgumentParser(description="Upload AgentGate decision model to Hugging Face Hub")
-    parser.add_argument("--repo", type=str, required=True, help="Hugging Face repo ID, e.g., mohitdebian/agentgate-qwen-0.8b")
+    parser.add_argument("--repo", type=str, required=True, help="Hugging Face repo ID, e.g., codeload/agentgate-qwen-0.8b")
     parser.add_argument("--path", type=str, default=None, help="Local path to model weights (defaults to decision/qwen-decisions)")
     parser.add_argument("--private", action="store_true", help="Set repository to private")
     args = parser.parse_args()

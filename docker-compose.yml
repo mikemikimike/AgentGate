@@ -17,6 +17,7 @@ services:
       dockerfile: Dockerfile
     environment:
       - USE_UNSLOTH=1
+      - DECISION_MODEL_PATH=${DECISION_MODEL_PATH:-codeload/agentgate-qwen-0.8b}
     # Uncomment to enable GPU usage for Unsloth:
     deploy:
       resources:

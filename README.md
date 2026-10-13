@@ -410,7 +410,7 @@ For production deployments and GPU workstations (< 2 GB VRAM footprint):
 ```bash
 # Enable Unsloth 4-bit inference and point to Hugging Face or local path
 export USE_UNSLOTH=1
-export DECISION_MODEL_PATH="mohitdebian/agentgate-qwen-0.8b" # or local directory path
+export DECISION_MODEL_PATH="codeload/agentgate-qwen-0.8b" # or local directory path
 ```
 On boot, the decision service automatically pulls the model adapter and Clef heads from Hugging Face Hub and loads them into GPU memory.
 
@@ -439,7 +439,7 @@ Environment variables supported across services:
 | `AG_DECISION_DEADLINE_MS` | Proxy | `5000` | Timeout in milliseconds before invoking `on_model_error`. |
 | `DASHBOARD_TOKEN` | Proxy | `""` | Optional bearer token protecting administrative API endpoints. |
 | `USE_UNSLOTH` | Decision | `0` | Enable Unsloth GPU inference (`1`) or use local stub (`0`). |
-| `DECISION_MODEL_PATH` | Decision | `""` | Local path or Hugging Face Hub repo ID (e.g. `mohitdebian/agentgate-qwen-0.8b`). |
+| `DECISION_MODEL_PATH` | Decision | `""` | Local path or Hugging Face Hub repo ID (e.g. `codeload/agentgate-qwen-0.8b`). |
 
 ---
 
