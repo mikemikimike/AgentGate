@@ -20,8 +20,9 @@ const upstreamCmd = args[0];
 const upstreamArgs = args.slice(1);
 
 let sessionId: string | null = null;
+let sessionPromise: Promise<string> | null = null;
 
-async function initSession() {
+async function initSession(): Promise<string> {
   try {
     const res = await axios.post(`${AGENTGATE_URL}/v1/sessions`, {
       agent_id: 'mcp-client',
@@ -29,9 +30,10 @@ async function initSession() {
     });
     sessionId = res.data.session_id;
     console.error(`[AgentGate MCP] Started session: ${sessionId}`);
+    return sessionId!;
   } catch (err: any) {
     console.error(`[AgentGate MCP] Failed to init session with AgentGate: ${err.message}`);
-    process.exit(1);
+    throw err;
   }
 }
 
@@ -68,11 +70,32 @@ const stdinRl = readline.createInterface({
 
 async function handleToolCall(req: any) {
   if (!sessionId) {
-    return { error: 'AgentGate session not initialized' };
+    try {
+      if (!sessionPromise) {
+        sessionPromise = initSession();
+      }
+      sessionId = await sessionPromise;
+    } catch (err: any) {
+      console.log(JSON.stringify({
+        jsonrpc: '2.0',
+        id: req.id,
+        error: { code: -32603, message: `AgentGate session failed to initialize: ${err.message}` }
+      }));
+      return;
+    }
   }
 
-  const toolName = req.params.name;
-  const toolArgs = req.params.arguments;
+  if (!sessionId) {
+    console.log(JSON.stringify({
+      jsonrpc: '2.0',
+      id: req.id,
+      error: { code: -32603, message: 'AgentGate session not initialized' }
+    }));
+    return;
+  }
+
+  const toolName = req.params?.name;
+  const toolArgs = req.params?.arguments;
 
   try {
     console.error(`[AgentGate MCP] Assessing tool call: ${toolName}`);
@@ -116,6 +139,18 @@ async function handleToolCall(req: any) {
           isError: true
         }
       }));
+    } else {
+      console.log(JSON.stringify({
+        jsonrpc: '2.0',
+        id: req.id,
+        result: {
+          content: [{
+            type: 'text',
+            text: `AgentGate returned unhandled verdict: ${verdict}`
+          }],
+          isError: true
+        }
+      }));
     }
   } catch (err: any) {
     console.error(`[AgentGate MCP] Error reaching AgentGate proxy:`, err.message);
@@ -147,4 +182,4 @@ stdinRl.on('line', async (line) => {
   }
 });
 
-initSession();
+sessionPromise = initSession().catch(() => '');

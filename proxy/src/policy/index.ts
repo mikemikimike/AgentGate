@@ -20,7 +20,8 @@ export const ToolPolicySchema = z.object({
   trust: z.string().optional(),
   rules: z.array(RuleSchema).optional(),
   default: z.enum(['allow', 'ask', 'deny']).optional(),
-  on_model_error: z.enum(['allow', 'ask', 'deny']).optional()
+  on_model_error: z.enum(['allow', 'ask', 'deny']).optional(),
+  send_raw_to_model: z.boolean().optional()
 });
 
 export const PolicySchema = z.object({
@@ -68,8 +69,30 @@ export function strictestAction(actions: string[]): string {
   return 'allow';
 }
 
+export function matchesPattern(pattern: string, tool: string): boolean {
+  if (pattern === tool) return true;
+  if (pattern === '*') return true;
+  if (!pattern.includes('*') && !pattern.includes('?')) return false;
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+  return new RegExp(`^${escaped}$`).test(tool);
+}
+
+export function resolveToolConfig(tool: string, policy: Policy): z.infer<typeof ToolPolicySchema> {
+  if (policy.tools[tool]) {
+    return policy.tools[tool];
+  }
+  const patternKeys = Object.keys(policy.tools).filter(k => k !== '*' && (k.includes('*') || k.includes('?')));
+  patternKeys.sort((a, b) => b.length - a.length);
+  for (const pattern of patternKeys) {
+    if (matchesPattern(pattern, tool)) {
+      return policy.tools[pattern];
+    }
+  }
+  return policy.tools['*'] || {};
+}
+
 export function evaluatePolicy(tool: string, heads: any, policy: Policy, actionTruncated: boolean = false): { verdict: string, reason_codes: string[] } {
-  const toolConfig = policy.tools[tool] || policy.tools["*"] || {};
+  const toolConfig = resolveToolConfig(tool, policy);
   const rules = toolConfig.rules || [];
   
   const matchedRules = rules.filter(r => evaluateCondition(r.when, heads));

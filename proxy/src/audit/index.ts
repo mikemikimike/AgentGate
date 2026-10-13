@@ -60,15 +60,15 @@ export async function writeDecisionRecord(data: {
   if (data.policy_version) {
     await pool.query(`
       INSERT INTO policies (version, yaml, active, created_by)
-      VALUES ($1, 'version: ' || $1, true, 'auto')
+      VALUES ($1, $2, false, 'auto')
       ON CONFLICT (version) DO NOTHING
-    `, [data.policy_version]);
+    `, [data.policy_version, `version: ${data.policy_version}`]);
   }
 
   if (data.model_version) {
     await pool.query(`
       INSERT INTO models (version, path, sha256, active) 
-      VALUES ($1, $1, 'auto', true) 
+      VALUES ($1, $1, 'auto', false) 
       ON CONFLICT (version) DO NOTHING
     `, [data.model_version]);
   }

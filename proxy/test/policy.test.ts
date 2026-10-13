@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluatePolicy, evaluateCondition, strictestAction } from '../src/policy';
+import { evaluatePolicy, evaluateCondition, strictestAction, matchesPattern } from '../src/policy';
 
 describe('Policy Engine', () => {
   it('strictestAction returns strictest', () => {
@@ -51,5 +51,48 @@ describe('Policy Engine', () => {
     const res2 = evaluatePolicy("test", heads2, policy as any);
     expect(res2.verdict).toBe('deny');
     expect(res2.reason_codes).toContain('h2_high');
+  });
+
+  it('evaluates wildcard tool patterns and resolves tool config correctly', () => {
+    const policy = {
+      version: 1,
+      tools: {
+        "send_*": {
+          rules: [
+            { id: "block-send", when: { head: "untrusted_influence", option: "likely", gt: 0.5 }, action: "deny", reason: "injected_send" }
+          ],
+          default: "ask"
+        },
+        "exact_match": {
+          default: "allow"
+        },
+        "*": {
+          default: "ask"
+        }
+      }
+    };
+
+    expect(matchesPattern("send_*", "send_email")).toBe(true);
+    expect(matchesPattern("send_*", "send_webhook")).toBe(true);
+    expect(matchesPattern("send_*", "receive_mail")).toBe(false);
+
+    const headsBlocked = {
+      untrusted_influence: { probabilities: { likely: 0.85 } }
+    };
+    const res = evaluatePolicy("send_webhook", headsBlocked, policy as any);
+    expect(res.verdict).toBe('deny');
+    expect(res.reason_codes).toContain('injected_send');
+
+    const headsAllowed = {
+      untrusted_influence: { probabilities: { likely: 0.10 } }
+    };
+    const res2 = evaluatePolicy("send_webhook", headsAllowed, policy as any);
+    expect(res2.verdict).toBe('ask'); // default for send_*
+
+    const resExact = evaluatePolicy("exact_match", headsAllowed, policy as any);
+    expect(resExact.verdict).toBe('allow');
+
+    const resFallback = evaluatePolicy("unregistered_tool", headsAllowed, policy as any);
+    expect(resFallback.verdict).toBe('ask');
   });
 });

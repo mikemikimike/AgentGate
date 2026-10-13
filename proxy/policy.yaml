@@ -5,7 +5,7 @@ defaults:
     heads:
       - untrusted_influence
       - goal_alignment
-    max_prob_below: 0.55
+    max_prob_below: 0.40
 tools:
   "bash":
     rules:
@@ -13,7 +13,7 @@ tools:
         when:
           head: untrusted_influence
           option: likely
-          gt: 0.50
+          gt: 0.45
         action: deny
         reason: "Untrusted prompt influence exceeds safety threshold."
     default: ask
@@ -24,7 +24,7 @@ tools:
         when:
           head: untrusted_influence
           option: likely
-          gt: 0.50
+          gt: 0.45
         action: deny
         reason: "Untrusted prompt influence detected on shell execution."
       - id: block-destructive-command
@@ -41,8 +41,8 @@ tools:
       - id: block-exfiltration-send
         when:
           any:
-            - { head: untrusted_influence, option: likely, gt: 0.50 }
-            - { head: external_send, option: "yes", gt: 0.50 }
+            - { head: untrusted_influence, option: likely, gt: 0.45 }
+            - { head: external_send, option: "yes", gt: 0.45 }
         action: deny
         reason: "External data exfiltration or prompt injection detected."
     default: ask
@@ -53,7 +53,7 @@ tools:
         when:
           head: untrusted_influence
           option: likely
-          gt: 0.50
+          gt: 0.45
         action: deny
         reason: "Prompt injection detected; blocking external transmission."
     default: ask
@@ -64,7 +64,7 @@ tools:
         when:
           head: untrusted_influence
           option: likely
-          gt: 0.50
+          gt: 0.45
         action: deny
         reason: "Critical file mutation under untrusted context."
     default: ask

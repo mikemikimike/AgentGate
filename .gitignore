@@ -69,6 +69,7 @@ playwright-report/
 test-results/
 .coverage
 htmlcov/
+created_issues.json
 
 # Editor & OS files
 .DS_Store

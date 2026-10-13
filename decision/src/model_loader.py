@@ -1,156 +1,204 @@
 import asyncio
+import json
 import os
 from typing import Any
+
+import torch
 
 from src.questions import QUESTIONS
 
 
-class UnslothDecisionModel:
-    def __init__(self, model_name="unsloth/Qwen3.5-0.8B"):
+class DecisionModel:
+    def __init__(self, model_name: str = "codeload/agentgate-qwen-0.8b"):
         self.version = model_name
-        
-        # In a real environment, we would load the FastDecisionModel here.
-        # Since this might be run on a machine without a GPU during development,
-        # we try to load it, and fallback to a stub if Unsloth or CUDA is unavailable.
-        self._has_unsloth = False
+        self.backend = "unknown"
+        self.device = "unknown"
         self.model = None
         self.tokenizer = None
-        
-        if os.environ.get("USE_UNSLOTH") == "1":
+
+        custom_checkpoint = os.environ.get("DECISION_MODEL_PATH")
+        if not custom_checkpoint:
+            local_default = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "..", "qwen-decisions")
+            )
+            if os.path.exists(local_default):
+                custom_checkpoint = local_default
+            else:
+                custom_checkpoint = model_name
+
+        load_path = custom_checkpoint
+        self.version = load_path
+
+        has_cuda = torch.cuda.is_available() and os.environ.get("FORCE_CPU") != "1"
+        if has_cuda:
             try:
                 from unsloth import FastDecisionModel
-                custom_checkpoint = os.environ.get("DECISION_MODEL_PATH")
-                if not custom_checkpoint:
-                    local_default = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "qwen-decisions"))
-                    if os.path.exists(local_default):
-                        custom_checkpoint = local_default
-                    else:
-                        custom_checkpoint = "codeload/agentgate-qwen-0.8b"
 
-                if custom_checkpoint and os.path.exists(custom_checkpoint):
-                    load_path = custom_checkpoint
-                    print(f"Loading fine-tuned Unsloth checkpoint from local path: {load_path}...")
-                elif custom_checkpoint:
-                    load_path = custom_checkpoint
-                    print(f"Loading Unsloth checkpoint from Hugging Face Hub: {load_path}...")
-                else:
-                    load_path = model_name
-                    print(f"Loading default Unsloth base model: {load_path}...")
-                self.version = load_path
+                print(f"Loading Unsloth checkpoint on GPU: {load_path}...")
                 self.model, self.tokenizer = FastDecisionModel.from_pretrained(
                     load_path,
                     max_seq_length=2048,
-                    load_in_4bit=True
+                    load_in_4bit=True,
                 )
                 FastDecisionModel.for_inference(self.model)
-                print("Unsloth model loaded successfully.")
-                self._has_unsloth = True
+                self.backend = "unsloth_gpu"
+                self.device = "cuda"
+                print("Unsloth model loaded successfully on GPU.")
+                return
             except Exception as e:
                 import traceback
-                print(f"WARNING: Failed to load Unsloth ({e}). Falling back to Stub behavior.")
+
+                print(f"WARNING: Failed to load Unsloth on GPU ({e}). Falling back to CPU transformers.")
                 traceback.print_exc()
+
+        # Fallback to standard PyTorch CPU via Hugging Face transformers
+        self._load_cpu(load_path)
+
+    def _load_cpu(self, load_path: str):
+        from peft import PeftModel
+        from safetensors.torch import load_file
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        from src.clef import ClefModel, JointSchemaHead
+
+        if not os.path.isdir(load_path):
+            from huggingface_hub import snapshot_download
+
+            print(f"Downloading checkpoint from Hugging Face Hub: {load_path}...")
+            folder = snapshot_download(load_path)
         else:
-            print("USE_UNSLOTH not set. Starting in STUB mode.")
+            folder = load_path
+
+        print(f"Loading checkpoint on CPU from {folder}...")
+        self.tokenizer = AutoTokenizer.from_pretrained(folder)
+
+        base_model = "unsloth/Qwen3.5-0.8B"
+        unsloth_cfg_file = os.path.join(folder, "unsloth_decision_config.json")
+        if os.path.exists(unsloth_cfg_file):
+            with open(unsloth_cfg_file, "r", encoding="utf-8") as f:
+                base_model = json.load(f).get("base_model", base_model)
+        elif os.path.exists(os.path.join(folder, "adapter_config.json")):
+            with open(os.path.join(folder, "adapter_config.json"), "r", encoding="utf-8") as f:
+                base_model = json.load(f).get("base_model_name_or_path", base_model)
+
+        print(f"Loading base language model on CPU: {base_model}...")
+        backbone = AutoModelForCausalLM.from_pretrained(base_model, dtype=torch.float32)
+
+        adapter_config_path = os.path.join(folder, "adapter_config.json")
+        if os.path.exists(adapter_config_path):
+            print(f"Applying LoRA adapter from {folder}...")
+            backbone = PeftModel.from_pretrained(backbone, folder)
+
+        head_config_path = os.path.join(folder, "joint_head_config.json")
+        head_weights_path = os.path.join(folder, "joint_head.safetensors")
+        with open(head_config_path, "r", encoding="utf-8") as f:
+            head_config = json.load(f)
+
+        print(f"Loading JointSchemaHead from {head_weights_path}...")
+        head = JointSchemaHead(**head_config)
+        head.load_state_dict(load_file(head_weights_path), strict=True)
+        head = head.to(device="cpu", dtype=torch.float32)
+
+        self.model = ClefModel(backbone, head).eval()
+        self.backend = "transformers_cpu"
+        self.device = "cpu"
+        print("Real PyTorch CPU neural model loaded successfully.")
 
     async def predict(self, text: str, questions: list[str]) -> dict[str, Any]:
-        if not self._has_unsloth:
-            return await self._stub_predict(text, questions)
-            
-        from unsloth import FastDecisionModel
-        
-        # Map our QUESTIONS format to the format Unsloth expects
+        if not self.model or not self.tokenizer:
+            raise RuntimeError("Decision model is not initialized")
+
         unsloth_questions = {}
         for q in questions:
             if q in QUESTIONS:
                 q_def = dict(QUESTIONS[q])
                 if q_def["type"] == "yes/no":
-                    q_def["type"] = "noul" # Clef boolean question type is 'noul'
+                    q_def["type"] = "noul"
                 unsloth_questions[q] = q_def
-                
-        # FastDecisionModel.predict is blocking, run in threadpool
+
         loop = asyncio.get_running_loop()
-        answers = await loop.run_in_executor(
-            None,
-            lambda: FastDecisionModel.predict(
-                self.model,
-                self.tokenizer,
-                text,
-                unsloth_questions
+
+        if self.backend == "unsloth_gpu":
+            from unsloth import FastDecisionModel
+
+            raw_answers = await loop.run_in_executor(
+                None,
+                lambda: FastDecisionModel.predict(
+                    self.model,
+                    self.tokenizer,
+                    text,
+                    unsloth_questions,
+                ),
             )
-        )
-        
-        # Post-process Unsloth answers back to our expected JSON schema
+        elif self.backend == "transformers_cpu":
+            from src.clef import collate_records, encode_record
+
+            def _cpu_forward():
+                req = {"state": text, "questions": unsloth_questions}
+                encoded = encode_record(self.tokenizer, req, max_length=2048)
+                batch = collate_records([encoded], self.tokenizer.pad_token_id, torch.device("cpu"))
+                with torch.no_grad():
+                    logits = self.model(batch)[0]
+
+                cpu_out = {}
+                for question, question_logits in zip(encoded.questions, logits):
+                    probs = dict(zip(question.option_ids, question_logits.float().softmax(-1).tolist()))
+                    is_noul = unsloth_questions[question.question_id]["type"] == "noul"
+                    if is_noul:
+                        ans_val = probs.get("true", 0.0) >= 0.5
+                    else:
+                        ans_val = max(probs, key=probs.get)
+                    cpu_out[question.question_id] = {
+                        "answer": ans_val,
+                        "probabilities": probs,
+                    }
+                return cpu_out
+
+            raw_answers = await loop.run_in_executor(None, _cpu_forward)
+        else:
+            raise RuntimeError(f"Unknown model backend: {self.backend}")
+
+        # Post-process answers to expected schema
         formatted_answers = {}
         for q in questions:
-            if q in answers and q in QUESTIONS:
-                val = answers[q]["answer"]
-                probs = answers[q].get("probabilities", {})
-                
-                # Unsloth uses True/False or "true"/"false" for noul types, we map back to "yes"/"no"
+            if q in raw_answers and q in QUESTIONS:
+                item = raw_answers[q]
+                val = item.get("answer")
+                probs = item.get("probabilities", {})
+
                 if QUESTIONS[q]["type"] == "yes/no":
-                    mapped_ans = "yes" if (val is True or str(val).lower() == "true") else "no"
+                    is_yes = val is True or str(val).lower() in ("true", "yes")
                     mapped_probs = {}
                     for k, v in probs.items():
-                        if k is True or str(k).lower() == "true":
+                        k_str = str(k).lower()
+                        if k_str in ("true", "yes"):
                             mapped_probs["yes"] = float(v)
-                        elif k is False or str(k).lower() == "false":
+                        elif k_str in ("false", "no"):
                             mapped_probs["no"] = float(v)
                     if not mapped_probs:
                         mapped_probs = {"yes": 0.5, "no": 0.5}
-                    
+
                     formatted_answers[q] = {
-                        "answer": mapped_ans,
-                        "probabilities": mapped_probs
+                        "answer": "yes" if is_yes else "no",
+                        "probabilities": mapped_probs,
                     }
                 else:
                     formatted_answers[q] = {
-                        "answer": val,
-                        "probabilities": probs
+                        "answer": str(val),
+                        "probabilities": {str(k): float(v) for k, v in probs.items()},
                     }
 
         return formatted_answers
 
-    async def _stub_predict(self, text: str, questions: list[str]) -> dict[str, Any]:
-        """Simulate a forward pass returning fixed probabilities."""
-        await asyncio.sleep(0.04)
-        
-        answers = {}
-        lower_text = text.lower()
-        is_suspicious = any(k in lower_text for k in ["evil", "attacker", "steal", "leak", "passwd", "curl", "http://"])
-        # If it's pure shell/db destruction without external injection, untrusted_influence is low
-        if "steal" not in lower_text and "attacker" not in lower_text and "evil" not in lower_text and "curl" not in lower_text and "passwd" not in lower_text:
-            is_suspicious = False
-        is_destructive = any(k in lower_text for k in ["delete", "rm -rf", "drop database", "truncate", "wipe"])
-        is_external = any(k in lower_text for k in ["evil", "leak", "send", "mail", "webhook"])
-        
-        for q in questions:
-            if q not in QUESTIONS:
-                continue
-            
-            if q == "untrusted_influence":
-                if is_suspicious:
-                    answers[q] = {"answer": "likely", "probabilities": {"none": 0.05, "possible": 0.15, "likely": 0.80}}
-                else:
-                    answers[q] = {"answer": "none", "probabilities": {"none": 0.90, "possible": 0.08, "likely": 0.02}}
-            elif q == "goal_alignment":
-                if is_suspicious:
-                    answers[q] = {"answer": "misaligned", "probabilities": {"aligned": 0.10, "tangential": 0.20, "misaligned": 0.70}}
-                else:
-                    answers[q] = {"answer": "aligned", "probabilities": {"aligned": 0.85, "tangential": 0.10, "misaligned": 0.05}}
-            elif q == "reversibility":
-                if is_destructive:
-                    answers[q] = {"answer": "irreversible", "probabilities": {"reversible": 0.10, "costly": 0.20, "irreversible": 0.70}}
-                else:
-                    answers[q] = {"answer": "reversible", "probabilities": {"reversible": 0.80, "costly": 0.15, "irreversible": 0.05}}
-            elif q == "external_send":
-                if is_external:
-                    answers[q] = {"answer": "yes", "probabilities": {"yes": 0.88, "no": 0.12}}
-                else:
-                    answers[q] = {"answer": "no", "probabilities": {"yes": 0.05, "no": 0.95}}
-        return answers
-        
     def get_tokenizer_info(self):
-        return {"max_tokens": 2048, "model_name": self.version, "is_stub": not self._has_unsloth}
+        return {
+            "max_tokens": 2048,
+            "model_name": self.version,
+            "is_stub": False,
+            "device": self.device,
+            "backend": self.backend,
+        }
+
 
 def load_model():
-    return UnslothDecisionModel()
+    return DecisionModel()

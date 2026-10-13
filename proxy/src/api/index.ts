@@ -5,7 +5,7 @@ import yaml from 'yaml';
 import { pool } from '../db';
 import { DecisionClient } from '../decision/client';
 import { buildContext } from '../context';
-import { evaluatePolicy, PolicySchema } from '../policy';
+import { evaluatePolicy, PolicySchema, resolveToolConfig } from '../policy';
 import { writeDecisionRecord, redactArguments } from '../audit';
 import axios from 'axios';
 
@@ -64,10 +64,15 @@ async function getActivePolicy() {
   try {
     const res = await pool.query('SELECT yaml FROM policies WHERE active = true ORDER BY version DESC LIMIT 1');
     if (res.rows.length > 0) {
-      cachedPolicyYaml = res.rows[0].yaml;
-      cachedPolicy = PolicySchema.parse(yaml.parse(cachedPolicyYaml));
-      lastPolicyFetch = now;
-      return cachedPolicy;
+      const parsed = PolicySchema.safeParse(yaml.parse(res.rows[0].yaml));
+      if (parsed.success && parsed.data.tools && Object.keys(parsed.data.tools).length > 0) {
+        cachedPolicyYaml = res.rows[0].yaml;
+        cachedPolicy = parsed.data;
+        lastPolicyFetch = now;
+        return cachedPolicy;
+      } else {
+        console.warn('Active policy in DB is empty or invalid schema, falling back to disk policy.');
+      }
     }
   } catch (e) {
     console.error('Failed to fetch active policy from DB:', e);
@@ -184,7 +189,7 @@ export default async function routes(fastify: FastifyInstance) {
     const maxTokens = mConfig?.max_tokens || 512;
     const activePolicy = await getActivePolicy();
 
-    const toolPolicy = activePolicy.tools[action.tool] || activePolicy.tools["*"] || {};
+    const toolPolicy = resolveToolConfig(action.tool, activePolicy);
     const sendRawToModel = toolPolicy.send_raw_to_model === true;
     
     // For prompt generation, pass raw arguments if configured, otherwise redact
@@ -214,7 +219,7 @@ export default async function routes(fastify: FastifyInstance) {
     let verdict = 'ask';
     let reason_codes: string[] = [];
     if (modelError) {
-      const defaultErrorAction = activePolicy.tools[action.tool]?.on_model_error || activePolicy.defaults?.on_model_error || 'ask';
+      const defaultErrorAction = toolPolicy.on_model_error || activePolicy.defaults?.on_model_error || 'ask';
       verdict = defaultErrorAction;
       reason_codes = ['model_error'];
     } else {
@@ -265,16 +270,15 @@ export default async function routes(fastify: FastifyInstance) {
     reply.sse((async function* () {
       let isClosed = false;
       const queue: any[] = [];
-      const listener = (type: string, data: any) => {
-        queue.push({ type, data });
-      };
-      streamEmitter.on('decision.created', (d) => listener('decision.created', d));
-      streamEmitter.on('approval.resolved', (d) => listener('approval.resolved', d));
+      const onDecisionCreated = (d: any) => queue.push({ type: 'decision.created', data: d });
+      const onApprovalResolved = (d: any) => queue.push({ type: 'approval.resolved', data: d });
+      streamEmitter.on('decision.created', onDecisionCreated);
+      streamEmitter.on('approval.resolved', onApprovalResolved);
 
       request.raw.on('close', () => {
         isClosed = true;
-        streamEmitter.off('decision.created', listener);
-        streamEmitter.off('approval.resolved', listener);
+        streamEmitter.off('decision.created', onDecisionCreated);
+        streamEmitter.off('approval.resolved', onApprovalResolved);
       });
 
       // Send initial heartbeat
