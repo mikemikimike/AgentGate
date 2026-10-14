@@ -15,7 +15,7 @@ AgentGate is an out-of-process authorization proxy and security gateway for auto
 </p>
 
 <p align="center">
-  <strong>🎮 Live Interactive Playground:</strong> <a href="https://huggingface.co/spaces/codeload/agentgate-demo">https://huggingface.co/spaces/codeload/agentgate-demo</a>
+  <strong>Live Interactive Playground:</strong> <a href="https://huggingface.co/spaces/codeload/agentgate-demo">https://huggingface.co/spaces/codeload/agentgate-demo</a>
 </p>
 
 ---
