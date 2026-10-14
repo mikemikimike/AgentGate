@@ -20,7 +20,6 @@ from typing import Any
 import torch
 import torch.nn.functional as functional
 
-
 SYSTEM_PROMPT = (
     "Read the complete state and schema. Decide every field jointly. Each answer "
     "must be exactly one of that field's allowed options."

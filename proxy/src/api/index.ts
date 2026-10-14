@@ -1,5 +1,4 @@
 import { FastifyInstance } from 'fastify';
-import crypto from 'crypto';
 import fs from 'fs';
 import yaml from 'yaml';
 import { pool } from '../db';
@@ -295,7 +294,7 @@ export default async function routes(fastify: FastifyInstance) {
     })());
   });
 
-  fastify.get('/v1/decisions', { preHandler: requireDashboardAuth }, async (request, reply) => {
+  fastify.get('/v1/decisions', { preHandler: requireDashboardAuth }, async (request, _reply) => {
     const { limit = 100, cursor, status } = request.query as any;
     const l = Math.min(parseInt(limit), 100);
     
@@ -351,7 +350,7 @@ export default async function routes(fastify: FastifyInstance) {
     return res.rows[0];
   });
 
-  fastify.get('/v1/policy', async (request, reply) => {
+  fastify.get('/v1/policy', async (_request, _reply) => {
     const policy = await getActivePolicy();
     return {
       version: policy.version,
@@ -423,7 +422,7 @@ export default async function routes(fastify: FastifyInstance) {
     return { success: true, version };
   });
 
-  fastify.post('/v1/approvals/:id', { preHandler: requireDashboardAuth }, async (request, reply) => {
+  fastify.post('/v1/approvals/:id', { preHandler: requireDashboardAuth }, async (request, _reply) => {
     const { id } = request.params as any;
     const { action } = request.body as any;
     const finalVerdict = action === 'approve' ? 'allow' : 'deny';
@@ -446,12 +445,12 @@ export default async function routes(fastify: FastifyInstance) {
     return { success: true, verdict: finalVerdict };
   });
 
-  fastify.get('/v1/model', async (request, reply) => {
+  fastify.get('/v1/model', async (_request, _reply) => {
     const mConfig = await getModelConfig();
     return mConfig || { error: "Decision server unreachable" };
   });
   
-  fastify.get('/metrics', async (request, reply) => {
+  fastify.get('/metrics', async (_request, _reply) => {
     // Stub Prometheus metrics text
     return `
 # HELP agentgate_decisions_total Number of decisions made

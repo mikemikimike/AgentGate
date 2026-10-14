@@ -1,6 +1,5 @@
 import fastify from 'fastify';
 import routes from './api';
-import pino from 'pino';
 
 const app = fastify({
   logger: true

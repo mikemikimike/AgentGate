@@ -29,7 +29,16 @@ class DecisionModel:
         load_path = custom_checkpoint
         self.version = load_path
 
-        has_cuda = torch.cuda.is_available() and os.environ.get("FORCE_CPU") != "1"
+        has_cuda = False
+        if os.environ.get("FORCE_CPU") != "1":
+            try:
+                if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+                    _ = torch.cuda.get_device_name(0)
+                    has_cuda = True
+            except Exception as e:
+                print(f"CUDA check failed ({e}). Defaulting to CPU.")
+                has_cuda = False
+
         if has_cuda:
             try:
                 from unsloth import FastDecisionModel
@@ -81,13 +90,17 @@ class DecisionModel:
             with open(os.path.join(folder, "adapter_config.json"), "r", encoding="utf-8") as f:
                 base_model = json.load(f).get("base_model_name_or_path", base_model)
 
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
         print(f"Loading base language model on CPU: {base_model}...")
-        backbone = AutoModelForCausalLM.from_pretrained(base_model, dtype=torch.float32)
+        backbone = AutoModelForCausalLM.from_pretrained(base_model, torch_dtype=torch.float32)
 
         adapter_config_path = os.path.join(folder, "adapter_config.json")
         if os.path.exists(adapter_config_path):
             print(f"Applying LoRA adapter from {folder}...")
-            backbone = PeftModel.from_pretrained(backbone, folder)
+            try:
+                backbone = PeftModel.from_pretrained(backbone, folder, device_map="cpu")
+            except TypeError:
+                backbone = PeftModel.from_pretrained(backbone, folder)
 
         head_config_path = os.path.join(folder, "joint_head_config.json")
         head_weights_path = os.path.join(folder, "joint_head.safetensors")
@@ -96,7 +109,7 @@ class DecisionModel:
 
         print(f"Loading JointSchemaHead from {head_weights_path}...")
         head = JointSchemaHead(**head_config)
-        head.load_state_dict(load_file(head_weights_path), strict=True)
+        head.load_state_dict(load_file(head_weights_path, device="cpu"), strict=True)
         head = head.to(device="cpu", dtype=torch.float32)
 
         self.model = ClefModel(backbone, head).eval()

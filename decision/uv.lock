@@ -41,7 +41,12 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "huggingface-hub" },
+    { name = "peft" },
     { name = "pydantic" },
+    { name = "safetensors" },
+    { name = "torch" },
+    { name = "transformers" },
     { name = "uvicorn" },
 ]
 
@@ -63,12 +68,17 @@ unsloth = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.100.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.25.0" },
+    { name = "huggingface-hub", specifier = ">=0.20.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.0" },
+    { name = "peft", specifier = ">=0.10.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
+    { name = "safetensors", specifier = ">=0.4.0" },
+    { name = "torch", specifier = ">=2.0.0" },
     { name = "torch", marker = "extra == 'unsloth'" },
+    { name = "transformers", specifier = ">=4.40.0" },
     { name = "transformers", marker = "extra == 'unsloth'" },
     { name = "unsloth", marker = "extra == 'unsloth'" },
     { name = "uvicorn", specifier = ">=0.23.0" },
