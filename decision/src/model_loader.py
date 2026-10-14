@@ -21,7 +21,8 @@ class DecisionModel:
             local_default = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "..", "qwen-decisions")
             )
-            if os.path.exists(local_default):
+            local_weights = os.path.join(local_default, "joint_head.safetensors")
+            if os.path.isdir(local_default) and os.path.exists(local_weights):
                 custom_checkpoint = local_default
             else:
                 custom_checkpoint = model_name
