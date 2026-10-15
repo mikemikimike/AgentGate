@@ -15,7 +15,9 @@ interface DecisionRecord {
   reason_codes?: string[];
   heads?: any;
   total_ms?: number;
-  created_at: string;
+  created_at?: string;
+  timestamp?: string;
+  time?: string;
   args_redacted?: any;
   cmd?: string;
   tag?: string;
@@ -135,14 +137,14 @@ export function FeedPage() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const { data, refetch, isRefetching } = useInfiniteQuery({
-    queryKey: ['decisions'],
+    queryKey: ['decisions', 'feed'],
     queryFn: async ({ pageParam }) => {
       const qs = new URLSearchParams();
       if (pageParam) qs.set('cursor', pageParam);
       return fetcher(`/v1/decisions?${qs.toString()}`);
     },
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.cursor || null
+    getNextPageParam: (lastPage) => lastPage?.cursor || null
   });
 
   // SSE live streaming
@@ -157,23 +159,40 @@ export function FeedPage() {
     return () => evtSource.close();
   }, [queryClient]);
 
-  // Merge backend data with fallback samples
+  // Merge backend data with fallback samples safely
   const allDecisions = useMemo(() => {
-    const apiDecisions = (data?.pages.flatMap(p => p.decisions) || []) as DecisionRecord[];
-    if (apiDecisions.length > 0) {
-      return apiDecisions.map(d => {
-        const dObj = new Date(d.created_at);
+    const rawItems: DecisionRecord[] = [];
+    if (data?.pages && Array.isArray(data.pages)) {
+      for (const page of data.pages) {
+        if (!page) continue;
+        const pageDecisions = Array.isArray(page.decisions)
+          ? page.decisions
+          : Array.isArray(page)
+            ? page
+            : [];
+        for (const item of pageDecisions) {
+          if (item && typeof item === 'object') {
+            rawItems.push(item as DecisionRecord);
+          }
+        }
+      }
+    }
+
+    if (rawItems.length > 0) {
+      return rawItems.map((d: DecisionRecord) => {
+        const rawTime = d.created_at || d.timestamp || d.time;
+        const dObj = rawTime ? new Date(rawTime) : new Date();
         const timeStr = !isNaN(dObj.getTime())
           ? dObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
           : '14:24:00';
         const { cmd, tag } = extractCommand(d);
         return {
-          id: d.id,
+          id: d.id || `dec_${Math.random().toString(36).substring(2, 9)}`,
           t: timeStr,
-          tool: d.tool,
+          tool: d.tool || 'action',
           cmd,
           tag,
-          v: d.verdict?.toLowerCase() === 'allow_with_checkpoint' ? 'allow' : d.verdict?.toLowerCase(),
+          v: d.verdict?.toLowerCase() === 'allow_with_checkpoint' ? 'allow' : (d.verdict?.toLowerCase() || 'allow'),
           rule: d.reason_codes?.[0] || 'default',
           ms: d.total_ms || 50,
           s: d.session_id || 's_100',
@@ -226,10 +245,11 @@ export function FeedPage() {
   };
 
   return (
-    <div className="p-[20px_24px_48px] max-w-[1500px] mx-auto space-y-[12px]">
-      {toastMsg && (
-        <div className="tst on">{toastMsg}</div>
-      )}
+    <div className="sv flex-1 overflow-auto">
+      <div className="pgc space-y-[12px]">
+        {toastMsg && (
+          <div className="tst on">{toastMsg}</div>
+        )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-[12px] mb-[16px]">
@@ -409,5 +429,6 @@ export function FeedPage() {
         </div>
       </div>
     </div>
+  </div>
   );
 }

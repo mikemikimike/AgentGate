@@ -7,6 +7,7 @@ import { DecisionDetailPage } from '../features/feed/DecisionDetailPage';
 import { ApprovalsPage } from '../features/feed/ApprovalsPage';
 import { PolicyEditorPage } from '../features/policy/PolicyEditorPage';
 import { DocsPage } from '../features/docs/DocsPage';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { 
   Activity, CheckSquare, Shield, BookOpen, Sun, Moon
 } from 'lucide-react';
@@ -171,20 +172,22 @@ function Sidebar() {
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="h-screen w-full flex overflow-hidden font-sans text-[13px] bg-bg text-tx antialiased">
           <Sidebar />
           <div className="flex flex-1 flex-col overflow-hidden min-w-0">
             <TopBar />
-            <main className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
-              <Routes>
-                <Route path="/" element={<FeedPage />} />
-                <Route path="/audit" element={<FeedPage />} />
-                <Route path="/approvals" element={<ApprovalsPage />} />
-                <Route path="/decisions/:id" element={<DecisionDetailPage />} />
-                <Route path="/policy" element={<PolicyEditorPage />} />
-                <Route path="/docs" element={<DocsPage />} />
-              </Routes>
+            <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<FeedPage />} />
+                  <Route path="/audit" element={<FeedPage />} />
+                  <Route path="/approvals" element={<ApprovalsPage />} />
+                  <Route path="/decisions/:id" element={<DecisionDetailPage />} />
+                  <Route path="/policy" element={<PolicyEditorPage />} />
+                  <Route path="/docs" element={<DocsPage />} />
+                </Routes>
+              </ErrorBoundary>
             </main>
           </div>
         </div>

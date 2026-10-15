@@ -82,11 +82,11 @@ export function DecisionDetailPage() {
 
   // Fetch all decisions to allow J/K navigation
   const { data: decisionsData } = useQuery({
-    queryKey: ['decisions'],
+    queryKey: ['decisions', 'list'],
     queryFn: async () => {
       try {
         const res = await fetcher('/v1/decisions');
-        return res.decisions || [];
+        return Array.isArray(res?.decisions) ? res.decisions : [];
       } catch {
         return [];
       }
@@ -94,21 +94,30 @@ export function DecisionDetailPage() {
   });
 
   const allList = useMemo<DecisionItem[]>(() => {
-    if (decisionsData && decisionsData.length > 0) {
-      return decisionsData.map((d: any) => ({
-        id: d.id,
-        t: new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
-        tool: d.tool,
-        cmd: d.args_redacted?.cmd || d.args_redacted?.command || d.tool,
-        v: d.verdict?.toLowerCase() === 'allow_with_checkpoint' ? 'allow' : d.verdict?.toLowerCase(),
-        rule: d.reason_codes?.[0] || 'default',
-        ms: d.total_ms || 50,
-        s: d.session_id || 's_100',
-        goal: d.goal || 'Execute user action',
-        args: JSON.stringify(d.args_redacted || {}),
-        sig: d.heads || mk(['none', 0.9], ['aligned', 0.9], ['reversible', 0.9], 0.1),
-        tag: ''
-      }));
+    if (Array.isArray(decisionsData) && decisionsData.length > 0) {
+      return decisionsData
+        .filter((d: any) => d && typeof d === 'object')
+        .map((d: any) => {
+          const rawTime = d.created_at || d.timestamp || d.time;
+          const dObj = rawTime ? new Date(rawTime) : new Date();
+          const timeStr = !isNaN(dObj.getTime())
+            ? dObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+            : '14:24:00';
+          return {
+            id: d.id || '',
+            t: timeStr,
+            tool: d.tool || '',
+            cmd: d.args_redacted?.cmd || d.args_redacted?.command || d.tool || '',
+            v: d.verdict?.toLowerCase() === 'allow_with_checkpoint' ? 'allow' : (d.verdict?.toLowerCase() || 'allow'),
+            rule: d.reason_codes?.[0] || 'default',
+            ms: d.total_ms || 50,
+            s: d.session_id || 's_100',
+            goal: d.goal || 'Execute user action',
+            args: JSON.stringify(d.args_redacted || {}),
+            sig: d.heads || mk(['none', 0.9], ['aligned', 0.9], ['reversible', 0.9], 0.1),
+            tag: ''
+          };
+        });
     }
     return SAMPLE_DECISIONS;
   }, [decisionsData]);

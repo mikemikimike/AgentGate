@@ -425,13 +425,14 @@ export function PolicyEditorPage() {
   };
 
   return (
-    <div className="max-w-[980px] mx-auto p-[20px_24px_48px] space-y-[16px]">
-      {/* Toast */}
-      {toastMsg && (
-        <div className="tst on">
-          {toastMsg}
-        </div>
-      )}
+    <div className="sv flex-1 overflow-auto">
+      <div className="pgc md space-y-[16px]">
+        {/* Toast */}
+        {toastMsg && (
+          <div className="tst on">
+            {toastMsg}
+          </div>
+        )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-[12px]">
@@ -640,5 +641,6 @@ export function PolicyEditorPage() {
         </div>
       )}
     </div>
+  </div>
   );
 }

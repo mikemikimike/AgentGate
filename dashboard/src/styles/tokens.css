@@ -215,6 +215,42 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   border-color: color-mix(in srgb, var(--bad) 40%, var(--l2));
 }
 
+.sv {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.pgc {
+  padding: 20px 24px 48px;
+  max-width: 1500px;
+  margin: 0 auto;
+  width: 100%;
+}
+.pgc.md {
+  max-width: 980px;
+}
+.pgc.nr {
+  max-width: 760px;
+}
+
+.hd {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.hd h1 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.hd p {
+  margin: 2px 0 0;
+  color: var(--t3);
+}
+
 .live {
   display: inline-flex;
   align-items: center;
@@ -486,6 +522,26 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   color: var(--t3);
 }
 
+.dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -8px 14px;
+}
+.dtt {
+  margin: 4px 0 12px;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dtt .mo {
+  font-size: inherit;
+}
+
 .blk {
   border: 1px solid var(--ln);
   border-radius: 8px;
@@ -636,6 +692,14 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 }
 .qp .tm { color: var(--wn); }
 
+.col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
 .bar {
   display: flex;
   gap: 8px;
@@ -686,6 +750,20 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .s1 { color: var(--ok); }
 .n1 { color: var(--wn); }
 .act1 { color: var(--tx); font-weight: 500; }
+
+.rg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.rg .blk {
+  margin: 0;
+}
+.mh {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 16px;
+}
 
 .tst {
   position: fixed;

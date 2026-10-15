@@ -70,6 +70,8 @@ test-results/
 .coverage
 htmlcov/
 created_issues.json
+dashboard/screenshots/
+dashboard/scripts/
 
 # Editor & OS files
 .DS_Store

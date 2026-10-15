@@ -103,7 +103,7 @@ export function ApprovalsPage() {
     queryFn: async () => {
       try {
         const res = await fetcher(`/v1/decisions?status=pending`);
-        return res.decisions || [];
+        return Array.isArray(res?.decisions) ? res.decisions : [];
       } catch {
         return [];
       }
@@ -111,18 +111,20 @@ export function ApprovalsPage() {
   });
 
   const pendingList: PendingItem[] = useMemo(() => {
-    if (decisions && decisions.length > 0) {
-      return decisions.map((d: any, i: number) => ({
-        id: d.id,
-        tool: d.tool,
-        sec: 102 + i * 13,
-        args: JSON.stringify(d.args_redacted || {}),
-        goal: d.goal || 'Execute agent task',
-        session_id: d.session_id || 's_100',
-        rule: d.reason_codes?.[0] || 'policy_ask',
-        heads: d.heads || {},
-        approval_id: d.approval_id || d.id
-      }));
+    if (Array.isArray(decisions) && decisions.length > 0) {
+      return decisions
+        .filter((d: any) => d && typeof d === 'object')
+        .map((d: any, i: number) => ({
+          id: d.id || `pending_${i}`,
+          tool: d.tool || 'action',
+          sec: 102 + i * 13,
+          args: JSON.stringify(d.args_redacted || {}),
+          goal: d.goal || 'Execute agent task',
+          session_id: d.session_id || 's_100',
+          rule: d.reason_codes?.[0] || 'policy_ask',
+          heads: d.heads || {},
+          approval_id: d.approval_id || d.id
+        }));
     }
     return SAMPLE_PENDING;
   }, [decisions]);
@@ -221,9 +223,11 @@ export function ApprovalsPage() {
 
   if (pendingList.length === 0) {
     return (
-      <div className="pgc nr">
-        <h1 className="dtt">All clear</h1>
-        <p className="c3">No calls are waiting for approval. New uncertain calls appear here.</p>
+      <div className="sv flex-1 overflow-auto">
+        <div className="pgc nr">
+          <h1 className="dtt mb-[12px]">All clear</h1>
+          <p className="c3">No calls are waiting for approval. New uncertain calls appear here.</p>
+        </div>
       </div>
     );
   }
@@ -269,11 +273,11 @@ export function ApprovalsPage() {
       {/* Centered review card (760px) */}
       <div className="sv flex-1 overflow-auto">
         <div className="pgc nr">
-          <div className="c3 mo">{selected.id} · {selected.session_id}</div>
-          <h1 className="dtt">
+          <div className="c3 mo mb-[6px]">{selected.id} · {selected.session_id}</div>
+          <h1 className="dtt mb-[12px]">
             <span>Approve <span className="mo">{selected.tool}</span>?</span>
           </h1>
-          <p className="c2" style={{ margin: '-8px 0 18px' }}>{whyText}</p>
+          <p className="c2 mb-[18px]">{whyText}</p>
 
           <div className="blk">
             <div className="bh">Proposed action</div>
