@@ -7,6 +7,7 @@ import { DecisionClient } from '../decision/client';
 import { buildContext } from '../context';
 import { evaluatePolicy, PolicySchema, resolveToolConfig } from '../policy';
 import { writeDecisionRecord, redactArguments } from '../audit';
+import { createCheckpoint, revertCheckpoint, getCheckpoint, listCheckpoints } from '../checkpoint';
 import axios from 'axios';
 
 import { FastifySSEPlugin } from 'fastify-sse-v2';
@@ -240,36 +241,60 @@ export default async function routes(fastify: FastifyInstance) {
 
     let verdict = 'ask';
     let reason_codes: string[] = [];
+    let effects: string[] = [];
     if (modelError) {
       const defaultErrorAction = toolPolicy.on_model_error || activePolicy.defaults?.on_model_error || 'ask';
       verdict = defaultErrorAction;
       reason_codes = ['model_error'];
     } else {
-      const polRes = evaluatePolicy(action.tool, answers, activePolicy, actionTruncated);
+      const polRes = evaluatePolicy(action.tool, answers, activePolicy, actionTruncated, action.arguments);
       verdict = polRes.verdict;
       reason_codes = polRes.reason_codes;
+      effects = polRes.effects || [];
+    }
+
+    const isShadowMode = process.env.AG_SHADOW_MODE === 'true';
+    let checkpointId: string | undefined;
+
+    if (verdict === 'allow_with_checkpoint') {
+      try {
+        const chk = await createCheckpoint({
+          decisionId: id,
+          sessionId: session_id,
+          tool: action.tool,
+          actionArgs: action.arguments
+        });
+        checkpointId = chk.id;
+      } catch (err: any) {
+        console.error('Failed to create checkpoint:', err);
+      }
+    }
+
+    if (verdict === 'ask' && !isShadowMode) {
+      const approval_id = generateId('a');
+      await pool.query('INSERT INTO approvals (id, decision_id, status) VALUES ($1, $2, $3)', [approval_id, id, 'pending']);
     }
 
     const total_ms = Date.now() - start_time;
+    const finalVerdict = isShadowMode ? 'allow' : verdict;
 
     await writeDecisionRecord({
       id, session_id, tool: action.tool, args: action.arguments,
       prompt_tokens: promptTokens, heads: answers, verdict, reason_codes,
       policy_version: activePolicy.version, model_version,
-      model_ms, total_ms, error: modelError
+      model_ms, total_ms, error: modelError,
+      effects, is_shadow: isShadowMode
     });
-    
-    if (verdict === 'ask') {
-      const approval_id = generateId('a');
-      await pool.query('INSERT INTO approvals (id, decision_id, status) VALUES ($1, $2, $3)', [approval_id, id, 'pending']);
-    }
 
     // Emit live event via PG NOTIFY
     await pool.query('SELECT pg_notify($1, $2)', ['agentgate_events', JSON.stringify({ type: 'decision.created', data: { decision_id: id } })]);
 
     return {
       decision_id: id,
-      verdict,
+      verdict: finalVerdict,
+      ...(isShadowMode ? { shadow_verdict: verdict, shadow_mode: true } : {}),
+      ...(checkpointId ? { checkpoint_id: checkpointId } : {}),
+      effects,
       reason_codes,
       heads: answers,
       policy_version: activePolicy.version,
@@ -416,7 +441,7 @@ export default async function routes(fastify: FastifyInstance) {
 
     const differences = [];
     for (const d of decisions) {
-      const polRes = evaluatePolicy(d.tool, d.heads, draftPolicy, false); // Truncation tracking not stored in v1 db, assume false for dry run
+      const polRes = evaluatePolicy(d.tool, d.heads, draftPolicy, false, d.args_redacted); // Truncation tracking not stored in v1 db, assume false for dry run
       if (polRes.verdict !== d.verdict) {
         differences.push({
           decision_id: d.id,
@@ -501,6 +526,83 @@ export default async function routes(fastify: FastifyInstance) {
     await pool.query('SELECT pg_notify($1, $2)', ['agentgate_events', JSON.stringify({ type: 'approval.resolved', data: { approval_id: id } })]);
     
     return { success: true, verdict: finalVerdict, status: approvalStatus };
+  });
+
+  fastify.post('/v1/checkpoints/:id/revert', async (request: any, reply) => {
+    const { id } = request.params as any;
+    try {
+      const result = await revertCheckpoint(id);
+      return result;
+    } catch (err: any) {
+      return reply.status(404).send({ error: err.message });
+    }
+  });
+
+  fastify.get('/v1/checkpoints/:id', async (request: any, reply) => {
+    const { id } = request.params as any;
+    const chk = await getCheckpoint(id);
+    if (!chk) {
+      return reply.status(404).send({ error: 'Checkpoint not found' });
+    }
+    return chk;
+  });
+
+  fastify.get('/v1/checkpoints', async (request: any, _reply) => {
+    const sessionId = (request.query as any)?.session_id;
+    const limit = parseInt((request.query as any)?.limit || '50', 10);
+    const list = await listCheckpoints(sessionId, limit);
+    return { checkpoints: list };
+  });
+
+  fastify.get('/v1/shadow/summary', async (_request, _reply) => {
+    const isShadowMode = process.env.AG_SHADOW_MODE === 'true';
+
+    const countRes = await pool.query(`
+      SELECT
+        count(*) as total_decisions,
+        count(*) FILTER (WHERE is_shadow = true) as shadow_decisions,
+        count(*) FILTER (WHERE verdict = 'deny' AND is_shadow = true) as simulated_denies,
+        count(*) FILTER (WHERE verdict = 'ask' AND is_shadow = true) as simulated_asks,
+        count(*) FILTER (WHERE verdict = 'allow_with_checkpoint' AND is_shadow = true) as simulated_checkpoints,
+        count(*) FILTER (WHERE verdict = 'allow' AND is_shadow = true) as simulated_allows,
+        avg(total_ms) as avg_total_ms,
+        avg(model_ms) as avg_model_ms
+      FROM decisions
+    `);
+
+    const row = countRes.rows[0] || {};
+    const total = parseInt(row.total_decisions || '0', 10);
+    const shadowTotal = parseInt(row.shadow_decisions || '0', 10);
+    const simulatedDenies = parseInt(row.simulated_denies || '0', 10);
+    const simulatedAsks = parseInt(row.simulated_asks || '0', 10);
+    const simulatedCheckpoints = parseInt(row.simulated_checkpoints || '0', 10);
+    const simulatedAllows = parseInt(row.simulated_allows || '0', 10);
+
+    const topToolsRes = await pool.query(`
+      SELECT tool, verdict, count(*) as count
+      FROM decisions
+      WHERE is_shadow = true AND verdict IN ('deny', 'ask')
+      GROUP BY tool, verdict
+      ORDER BY count DESC
+      LIMIT 10
+    `);
+
+    return {
+      shadow_mode_active: isShadowMode,
+      total_evaluated: shadowTotal > 0 ? shadowTotal : total,
+      simulated_verdicts: {
+        allow: simulatedAllows,
+        allow_with_checkpoint: simulatedCheckpoints,
+        ask: simulatedAsks,
+        deny: simulatedDenies
+      },
+      interventions_prevented: simulatedDenies + simulatedAsks,
+      top_simulated_interventions: topToolsRes.rows,
+      latency_ms: {
+        avg_total: Math.round((parseFloat(row.avg_total_ms) || 0) * 10) / 10,
+        avg_model: Math.round((parseFloat(row.avg_model_ms) || 0) * 10) / 10
+      }
+    };
   });
 
   fastify.get('/v1/model', async (_request, _reply) => {

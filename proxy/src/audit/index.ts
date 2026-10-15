@@ -58,7 +58,8 @@ export async function writeDecisionRecord(data: {
   id: string, session_id: string, tool: string, args: any,
   prompt_tokens: number, heads: any, verdict: string, reason_codes: string[],
   policy_version: number, model_version: string,
-  model_ms: number, total_ms: number, error?: string
+  model_ms: number, total_ms: number, error?: string,
+  effects?: string[], is_shadow?: boolean
 }) {
   const argsRedacted = redactArguments(data.args);
   const argsSha256 = hashString(deterministicStringify(data.args));
@@ -83,13 +84,14 @@ export async function writeDecisionRecord(data: {
     INSERT INTO decisions (
       id, session_id, tool, args_redacted, args_sha256, prompt_tokens,
       heads, verdict, reason_codes, policy_version, model_version,
-      model_ms, total_ms, error
+      model_ms, total_ms, error, effects, is_shadow
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
     )
   `, [
     data.id, data.session_id, data.tool, JSON.stringify(argsRedacted), argsSha256,
     data.prompt_tokens, JSON.stringify(data.heads), data.verdict, data.reason_codes,
-    data.policy_version, data.model_version, data.model_ms, data.total_ms, data.error || null
+    data.policy_version, data.model_version, data.model_ms, data.total_ms, data.error || null,
+    data.effects || [], data.is_shadow || false
   ]);
 }

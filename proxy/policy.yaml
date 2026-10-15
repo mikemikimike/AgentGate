@@ -16,6 +16,24 @@ tools:
           gt: 0.45
         action: deny
         reason: "Untrusted prompt influence exceeds safety threshold."
+      - id: allow-safe-reads
+        when:
+          all:
+            - effect: read
+            - head: untrusted_influence
+              option: likely
+              lt: 0.40
+        action: allow
+        reason: "Autonomous read command with low untrusted influence."
+      - id: checkpoint-writes
+        when:
+          all:
+            - effect: write
+            - head: untrusted_influence
+              option: likely
+              lt: 0.40
+        action: allow_with_checkpoint
+        reason: "Modifying command auto-snapshotted with instant undo capability."
     default: ask
 
   "bash_exec":
@@ -27,6 +45,24 @@ tools:
           gt: 0.45
         action: deny
         reason: "Untrusted prompt influence detected on shell execution."
+      - id: allow-safe-shell-reads
+        when:
+          all:
+            - effect: read
+            - head: untrusted_influence
+              option: likely
+              lt: 0.40
+        action: allow
+        reason: "Autonomous read command with low untrusted influence."
+      - id: checkpoint-shell-writes
+        when:
+          all:
+            - effect: write
+            - head: untrusted_influence
+              option: likely
+              lt: 0.40
+        action: allow_with_checkpoint
+        reason: "Modifying shell command auto-snapshotted."
       - id: block-destructive-command
         when:
           head: reversibility
@@ -67,6 +103,13 @@ tools:
           gt: 0.45
         action: deny
         reason: "Critical file mutation under untrusted context."
+      - id: checkpoint-file-edit
+        when:
+          head: untrusted_influence
+          option: likely
+          lt: 0.40
+        action: allow_with_checkpoint
+        reason: "File modification auto-checkpointed for safe autonomous editing."
     default: ask
 
   "database_query":

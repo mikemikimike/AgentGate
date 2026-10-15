@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { classifyToolEffects, Effect } from './effects';
 
 export const ConditionSchema = z.object({
   all: z.array(z.any()).optional(),
@@ -6,28 +7,33 @@ export const ConditionSchema = z.object({
   head: z.string().optional(),
   option: z.string().optional(),
   gt: z.number().optional(),
-  lt: z.number().optional()
+  lt: z.number().optional(),
+  effect: z.string().optional(),
+  effects: z.union([z.string(), z.array(z.string())]).optional(),
+  has_effect: z.string().optional(),
+  any_effect: z.union([z.string(), z.array(z.string())]).optional()
 });
 
 export const RuleSchema = z.object({
   id: z.string(),
   when: ConditionSchema,
-  action: z.enum(['allow', 'ask', 'deny']),
-  reason: z.string()
+  action: z.enum(['allow', 'allow_with_checkpoint', 'ask', 'deny']),
+  reason: z.string(),
+  expires_at: z.string().optional()
 });
 
 export const ToolPolicySchema = z.object({
   trust: z.string().optional(),
   rules: z.array(RuleSchema).optional(),
-  default: z.enum(['allow', 'ask', 'deny']).optional(),
-  on_model_error: z.enum(['allow', 'ask', 'deny']).optional(),
+  default: z.enum(['allow', 'allow_with_checkpoint', 'ask', 'deny']).optional(),
+  on_model_error: z.enum(['allow', 'allow_with_checkpoint', 'ask', 'deny']).optional(),
   send_raw_to_model: z.boolean().optional()
 });
 
 export const PolicySchema = z.object({
   version: z.number(),
   defaults: z.object({
-    on_model_error: z.enum(['allow', 'ask', 'deny']).optional(),
+    on_model_error: z.enum(['allow', 'allow_with_checkpoint', 'ask', 'deny']).optional(),
     abstain: z.object({
       heads: z.array(z.string()),
       max_prob_below: z.number()
@@ -38,15 +44,41 @@ export const PolicySchema = z.object({
 
 export type Policy = z.infer<typeof PolicySchema>;
 
-export function evaluateCondition(cond: any, heads: any): boolean {
+export function evaluateCondition(cond: any, heads: any, effects: Effect[] = []): boolean {
   if (cond.all) {
-    return cond.all.every((c: any) => evaluateCondition(c, heads));
+    return cond.all.every((c: any) => evaluateCondition(c, heads, effects));
   }
   if (cond.any) {
-    return cond.any.some((c: any) => evaluateCondition(c, heads));
+    return cond.any.some((c: any) => evaluateCondition(c, heads, effects));
   }
+
+  let hasCheck = false;
+
+  if (cond.effect !== undefined) {
+    hasCheck = true;
+    if (effects.length === 0 || !effects.every(e => e === cond.effect)) return false;
+  }
+
+  if (cond.effects !== undefined) {
+    hasCheck = true;
+    const allowed = Array.isArray(cond.effects) ? cond.effects : [cond.effects];
+    if (effects.length === 0 || !effects.every(e => allowed.includes(e))) return false;
+  }
+
+  if (cond.has_effect !== undefined) {
+    hasCheck = true;
+    if (!effects.includes(cond.has_effect)) return false;
+  }
+
+  if (cond.any_effect !== undefined) {
+    hasCheck = true;
+    const targets = Array.isArray(cond.any_effect) ? cond.any_effect : [cond.any_effect];
+    if (!targets.some((e: any) => effects.includes(e))) return false;
+  }
+
   if (cond.head && cond.option) {
-    if (!heads[cond.head] || !heads[cond.head].probabilities) {
+    hasCheck = true;
+    if (!heads || !heads[cond.head] || !heads[cond.head].probabilities) {
       console.warn(`[WARNING] Missing head in model response: ${cond.head}`);
       return false;
     }
@@ -58,14 +90,15 @@ export function evaluateCondition(cond: any, heads: any): boolean {
     
     if (cond.gt !== undefined && prob <= cond.gt) return false;
     if (cond.lt !== undefined && prob >= cond.lt) return false;
-    return true;
   }
-  return false;
+
+  return hasCheck;
 }
 
 export function strictestAction(actions: string[]): string {
   if (actions.includes('deny')) return 'deny';
   if (actions.includes('ask')) return 'ask';
+  if (actions.includes('allow_with_checkpoint')) return 'allow_with_checkpoint';
   return 'allow';
 }
 
@@ -91,13 +124,32 @@ export function resolveToolConfig(tool: string, policy: Policy): z.infer<typeof 
   return policy.tools['*'] || {};
 }
 
-export function evaluatePolicy(tool: string, heads: any, policy: Policy, actionTruncated: boolean = false): { verdict: string, reason_codes: string[] } {
+export function evaluatePolicy(
+  tool: string,
+  heads: any,
+  policy: Policy,
+  actionTruncated: boolean = false,
+  toolArgs?: any
+): { verdict: string, reason_codes: string[], effects: Effect[] } {
   const toolConfig = resolveToolConfig(tool, policy);
   const rules = toolConfig.rules || [];
-  
-  const matchedRules = rules.filter(r => evaluateCondition(r.when, heads));
+  const effects = classifyToolEffects(tool, toolArgs);
+
+  const matchedRules = rules.filter(r => {
+    if (r.expires_at) {
+      const expiry = new Date(r.expires_at).getTime();
+      if (!isNaN(expiry) && Date.now() > expiry) {
+        console.warn(`[WARNING] Policy rule '${r.id}' expired at ${r.expires_at}; skipping evaluation.`);
+        return false;
+      }
+    }
+    return evaluateCondition(r.when, heads, effects);
+  });
+
   const actions = matchedRules.map(r => r.action);
-  actions.push(toolConfig.default || "allow");
+  if (actions.length === 0) {
+    actions.push(toolConfig.default || "allow");
+  }
   
   const reasons = matchedRules.map(r => r.reason);
   
@@ -126,5 +178,5 @@ export function evaluatePolicy(tool: string, heads: any, policy: Policy, actionT
   }
   
   const verdict = strictestAction(actions);
-  return { verdict, reason_codes: reasons };
+  return { verdict, reason_codes: reasons, effects };
 }
