@@ -8,9 +8,8 @@ import { ApprovalsPage } from '../features/feed/ApprovalsPage';
 import { PolicyEditorPage } from '../features/policy/PolicyEditorPage';
 import { DocsPage } from '../features/docs/DocsPage';
 import { 
-  Activity, CheckSquare, FileCode, BookOpen, Sun, Moon, HelpCircle
+  Activity, CheckSquare, Shield, BookOpen, Sun, Moon
 } from 'lucide-react';
-import { HowItWorksModal } from '../components/HowItWorksModal';
 
 const queryClient = new QueryClient();
 
@@ -31,8 +30,8 @@ function ThemeToggle() {
   return (
     <button 
       onClick={toggleTheme} 
-      className="w-[28px] h-[28px] rounded-[6px] border border-ln bg-rs text-t2 hover:text-tx hover:bg-hv flex items-center justify-center transition-colors focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
-      title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
+      className="w-[28px] h-[28px] rounded-[6px] border border-ln bg-none text-t2 hover:text-tx hover:bg-hv flex items-center justify-center transition-colors focus-visible:outline-2 focus-visible:outline-ac"
+      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
@@ -48,55 +47,40 @@ function TopBar() {
   const { data: model } = useModelInfo();
   const { data: policy } = usePolicy();
   const location = useLocation();
-  const [showHowItWorks, setShowHowItWorks] = useState(false);
   const gatewayName = 'gateway-us-east';
 
   const getPageTitle = () => {
-    if (location.pathname === '/') return 'Decisions log';
-    if (location.pathname.startsWith('/approvals')) return 'Approvals queue';
+    if (location.pathname === '/' || location.pathname === '/audit') return 'Audit log';
+    if (location.pathname.startsWith('/approvals')) return 'Approvals';
     if (location.pathname.startsWith('/policy')) return 'Policy rules';
     if (location.pathname.startsWith('/docs')) return 'Documentation';
-    if (location.pathname.startsWith('/decisions')) return 'Decision detail';
-    return 'Decisions log';
+    if (location.pathname.startsWith('/decisions')) return 'Audit log';
+    return 'Audit log';
   };
 
-  const engineName = model?.model_name || 'agentgate-stub';
+  const engineName = model?.model_name || 'agentgate-v0';
   const policyVersion = policy?.version ? `v${policy.version}` : 'v1';
 
   return (
     <header className="h-[44px] border-b border-ln bg-pn flex items-center px-[20px] justify-between shrink-0">
       {/* Left: breadcrumb */}
-      <div className="flex items-center gap-[6px] text-[13px] font-sans">
-        <span className="text-t2 font-normal">{gatewayName}</span>
-        <span className="text-t3">/</span>
+      <div className="flex items-center gap-[6px] text-[13px] text-t3">
+        <span>{gatewayName}</span>
+        <span>/</span>
         <span className="text-tx font-medium">{getPageTitle()}</span>
+        {location.pathname.startsWith('/decisions/') && (
+          <>
+            <span>/</span>
+            <span className="text-tx font-medium font-mono text-[12px]">{location.pathname.split('/').pop()}</span>
+          </>
+        )}
       </div>
 
-      {/* Right: engine tag, policy tag, how-it-works, theme button */}
+      {/* Right: sample tag, engine tag, policy tag, theme button */}
       <div className="flex items-center gap-[8px]">
-        {/* engine tag */}
-        <div className="h-[22px] px-[8px] rounded-[5px] border border-ln bg-bg text-[12px] font-mono text-t2 flex items-center">
-          <span>engine {engineName}</span>
-        </div>
-
-        {/* policy tag */}
-        <div className="h-[22px] px-[8px] rounded-[5px] border border-ln bg-bg text-[12px] font-mono text-t2 flex items-center">
-          <span>policy {policyVersion}</span>
-        </div>
-
-        {/* How it works explainer button */}
-        <button
-          onClick={() => setShowHowItWorks(true)}
-          className="h-[24px] px-[8px] rounded-[5px] border border-ln bg-sl/30 hover:bg-hv text-[11.5px] font-medium text-tx flex items-center gap-[5px] transition-colors shadow-2xs focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
-          title="Learn how AgentGate works"
-        >
-          <HelpCircle size={13} className="text-at" aria-hidden="true" />
-          <span className="hidden sm:inline">How it works</span>
-        </button>
-
-        <HowItWorksModal open={showHowItWorks} onOpenChange={setShowHowItWorks} />
-
-        {/* Theme button */}
+        <span className="tg smp">Sample data</span>
+        <span className="tg">engine <b className="mo">{engineName}</b></span>
+        <span className="tg">policy <b className="mo">{policyVersion}</b></span>
         <ThemeToggle />
       </div>
     </header>
@@ -111,58 +95,60 @@ function Sidebar() {
   const navItems = [
     { to: '/', label: 'Audit log', icon: Activity },
     { to: '/approvals', label: 'Approvals', icon: CheckSquare, badge: pendingCount },
-    { to: '/policy', label: 'Policy rules', icon: FileCode },
+    { to: '/policy', label: 'Policy rules', icon: Shield },
     { to: '/docs', label: 'Documentation', icon: BookOpen },
   ];
 
   return (
     <aside className="w-[224px] border-r border-ln bg-pn flex flex-col p-[10px_8px] shrink-0 justify-between h-full select-none">
-      <div className="flex flex-col gap-[14px]">
-        {/* Brand row: 20px rounded square with 1.5px accent outline and 7px accent dot */}
-        <div className="flex items-center gap-[10px] px-[6px] py-[6px]">
-          <div className="w-[22px] h-[22px] rounded-[4px] border-[1.5px] border-at bg-at/10 flex items-center justify-center shrink-0 shadow-[0_0_8px_var(--chkb)]">
-            <div className="w-[6px] h-[6px] rounded-full bg-at animate-pulse motion-reduce:animate-none" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-display font-bold text-tx text-[14px] leading-tight tracking-tight uppercase">AgentGate</span>
-            <span className="text-[10px] font-mono text-t3 uppercase tracking-wider mt-[1px]">Security Gateway</span>
+      <div className="flex flex-col">
+        {/* Brand mark: 20px rounded square with 1.5px accent outline and 7px accent dot */}
+        <div className="flex items-center gap-[9px] p-[6px_8px] font-semibold text-tx">
+          <span className="lg">
+            <i />
+          </span>
+          <div>
+            <div className="leading-tight">AgentGate</div>
+            <small className="block font-normal text-t3 text-[11.5px] leading-[14px]">Security proxy</small>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex flex-col gap-[2px]">
-          {/* Section label: sentence case, 11.5px, muted */}
-          <div className="text-[10.5px] font-mono uppercase tracking-wider text-t3 px-[8px] py-[6px] leading-tight">
-            Telemetry & Control
-          </div>
+        {/* Section label: sentence case, 11.5px, muted */}
+        <div className="text-[11.5px] text-t3 px-[8px] pt-[16px] pb-[4px]">
+          Security control
+        </div>
 
+        {/* Navigation items */}
+        <nav className="flex flex-col gap-[1px]">
           {navItems.map(item => {
             const Icon = item.icon;
-            const active = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
+            const active = location.pathname === item.to || 
+              (item.to === '/' && location.pathname === '/audit') ||
+              (item.to !== '/' && location.pathname.startsWith(item.to));
             return (
               <Link 
                 key={item.to} 
                 to={item.to} 
-                className={`h-[30px] flex items-center justify-between px-[8px] rounded-[4px] text-[12.5px] font-medium transition-colors focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden ${
+                className={`h-[28px] flex items-center gap-[9px] px-[8px] rounded-[6px] text-[13px] transition-colors ${
                   active 
-                    ? 'bg-sl text-tx font-semibold shadow-xs border-l-2 border-at' 
+                    ? 'bg-sl text-tx font-normal' 
                     : 'text-t2 hover:bg-hv hover:text-tx'
                 }`}
               >
-                <div className="flex items-center gap-[9px] truncate">
-                  <Icon 
-                    size={15} 
-                    strokeWidth={1.7} 
-                    aria-hidden="true"
-                    className={active ? 'text-at' : 'text-t3'} 
-                  />
-                  <span className="truncate">{item.label}</span>
-                </div>
+                <Icon 
+                  size={15} 
+                  strokeWidth={1.6} 
+                  aria-hidden="true"
+                  className={`shrink-0 ${active ? 'text-at' : 'text-current'}`} 
+                />
+                <span className="truncate">{item.label}</span>
 
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="px-[6px] py-[1px] text-[10.5px] font-mono font-semibold rounded-[3px] bg-wn/15 text-wn border border-wn/35 animate-pulse motion-reduce:animate-none">
+                  <em className={`ml-auto not-italic text-[11px] rounded-[10px] px-[6px] min-w-[18px] text-center ${
+                    active ? 'bg-bg text-t2' : 'bg-sl text-t2'
+                  }`}>
                     {item.badge}
-                  </span>
+                  </em>
                 )}
               </Link>
             );
@@ -170,13 +156,13 @@ function Sidebar() {
         </nav>
       </div>
 
-      {/* Footer Info: version string and active status dot */}
-      <div className="px-[8px] py-[8px] border-t border-ln text-[11px] text-t3 flex items-center justify-between font-mono">
-        <span className="text-[10.5px] text-t3 tracking-tight">GATEWAY v0.2.0</span>
-        <div className="flex items-center gap-[6px]">
-          <span className={`w-[6px] h-[6px] rounded-full ${isHealthy ? 'bg-ok shadow-[0_0_6px_var(--ok)] animate-pulse motion-reduce:animate-none' : 'bg-bad'}`} />
-          <span className="text-[10.5px] text-t2 uppercase font-medium">{isHealthy ? 'LIVE' : 'OFFLINE'}</span>
-        </div>
+      {/* Footer Info: v0.2.0 with an Active status dot */}
+      <div className="mt-auto border-t border-ln pt-[10px] pb-[2px] px-[8px] flex items-center gap-[8px] text-t3 text-[12px]">
+        <span className="mo">v0.2.0</span>
+        <span className="ml-auto flex items-center gap-[6px] text-t2">
+          <i className={`w-[7px] h-[7px] rounded-full ${isHealthy ? 'bg-ok shadow-[0_0_0_3px_var(--okb)]' : 'bg-bad shadow-[0_0_0_3px_var(--badb)]'}`} />
+          <span>{isHealthy ? 'Active' : 'Offline'}</span>
+        </span>
       </div>
     </aside>
   );
@@ -193,6 +179,7 @@ export function App() {
             <main className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
               <Routes>
                 <Route path="/" element={<FeedPage />} />
+                <Route path="/audit" element={<FeedPage />} />
                 <Route path="/approvals" element={<ApprovalsPage />} />
                 <Route path="/decisions/:id" element={<DecisionDetailPage />} />
                 <Route path="/policy" element={<PolicyEditorPage />} />
@@ -205,4 +192,3 @@ export function App() {
     </QueryClientProvider>
   );
 }
-

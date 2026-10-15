@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { 
-  Rocket, Cpu, Shield, Terminal, Palette, Copy, Check, 
+  Rocket, Cpu, Shield, Terminal, Palette, 
   Layers, Zap, AlertTriangle, ShieldCheck, Database
 } from 'lucide-react';
+import { CodeBlock } from '../../components/CodeBlock';
 
 interface DocSection {
   id: string;
@@ -10,35 +11,6 @@ interface DocSection {
   category: string;
   icon: any;
   content: React.ReactNode;
-}
-
-function CodeBlock({ code, language = 'bash' }: { code: string; language?: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="relative group my-12 rounded-[6px] border border-[var(--ln)] bg-[var(--pn)] overflow-hidden shadow-xs">
-      <div className="flex items-center justify-between px-12 py-6 bg-[var(--sl)]/40 border-b border-[var(--ln)] text-[11px] font-mono text-[var(--t2)]">
-        <span>{language}</span>
-        <button 
-          onClick={copy} 
-          aria-label="Copy code block to clipboard"
-          className="flex items-center gap-6 px-8 py-2 rounded-[4px] bg-[var(--bg)] hover:bg-[var(--hv)] border border-[var(--ln)] text-[var(--tx)] transition-colors focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
-        >
-          {copied ? <Check size={12} className="text-[var(--ok)]" aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
-          <span>{copied ? 'Copied' : 'Copy'}</span>
-        </button>
-      </div>
-      <pre className="p-14 text-[12.5px] font-mono text-[var(--tx)] overflow-x-auto leading-[20px]">
-        {code}
-      </pre>
-    </div>
-  );
 }
 
 function Callout({ type = 'info', title, children }: { type?: 'info' | 'warning' | 'tip'; title: string; children: React.ReactNode }) {
@@ -49,7 +21,7 @@ function Callout({ type = 'info', title, children }: { type?: 'info' | 'warning'
   };
 
   const icons = {
-    info: <Layers size={15} className="text-at shrink-0" aria-hidden="true" />,
+    info: <Layers size={15} className="text-tx shrink-0" aria-hidden="true" />,
     warning: <AlertTriangle size={15} className="text-wn shrink-0" aria-hidden="true" />,
     tip: <ShieldCheck size={15} className="text-ok shrink-0" aria-hidden="true" />
   };
@@ -127,22 +99,22 @@ export function DocsPage() {
                 <tbody className="divide-y divide-ln">
                   <tr>
                     <td className="p-10 font-medium text-tx">Operations Dashboard</td>
-                    <td className="p-10 font-mono text-at">5173</td>
+                    <td className="p-10 font-mono text-tx font-medium">5173</td>
                     <td className="p-10 text-t2">Web console, live decisions feed, human approvals queue</td>
                   </tr>
                   <tr>
                     <td className="p-10 font-medium text-tx">Fastify Security Proxy</td>
-                    <td className="p-10 font-mono text-at">8080</td>
+                    <td className="p-10 font-mono text-tx font-medium">8080</td>
                     <td className="p-10 text-t2">Tool interception, BPE tokenization, SSE live stream</td>
                   </tr>
                   <tr>
                     <td className="p-10 font-medium text-tx">Decision ML Engine</td>
-                    <td className="p-10 font-mono text-at">9000</td>
+                    <td className="p-10 font-mono text-tx font-medium">9000</td>
                     <td className="p-10 text-t2">FastAPI server hosting the Unsloth Qwen model</td>
                   </tr>
                   <tr>
                     <td className="p-10 font-medium text-tx">PostgreSQL Database</td>
-                    <td className="p-10 font-mono text-at">5432</td>
+                    <td className="p-10 font-mono text-tx font-medium">5432</td>
                     <td className="p-10 text-t2">Audit logs, stored decisions, LISTEN/pg_notify pub/sub</td>
                   </tr>
                 </tbody>
@@ -195,7 +167,7 @@ export function DocsPage() {
 
               <div className="p-14 rounded-6 border border-ln bg-pn space-y-6">
                 <div className="font-semibold text-[13px] text-tx flex items-center gap-8">
-                  <Terminal size={15} className="text-at" aria-hidden="true" />
+                  <Terminal size={15} className="text-tx" aria-hidden="true" />
                   Exact BPE Token Counting
                 </div>
                 <p className="text-[12px] text-t2 leading-relaxed">
@@ -262,22 +234,22 @@ export function DocsPage() {
                 </thead>
                 <tbody className="divide-y divide-ln">
                   <tr>
-                    <td className="p-10 font-mono font-medium text-at">untrusted_influence</td>
+                    <td className="p-10 font-mono font-medium text-tx">untrusted_influence</td>
                     <td className="p-10 font-mono text-t2">none / possible / likely</td>
                     <td className="p-10 text-tx">Detects if untrusted input (poisoned email/webpage) hijacked the agent</td>
                   </tr>
                   <tr>
-                    <td className="p-10 font-mono font-medium text-at">external_send</td>
+                    <td className="p-10 font-mono font-medium text-tx">external_send</td>
                     <td className="p-10 font-mono text-t2">yes / no</td>
                     <td className="p-10 text-tx">Identifies whether confidential data or API keys are leaving the boundary</td>
                   </tr>
                   <tr>
-                    <td className="p-10 font-mono font-medium text-at">reversibility</td>
+                    <td className="p-10 font-mono font-medium text-tx">reversibility</td>
                     <td className="p-10 font-mono text-t2">reversible / costly / irreversible</td>
                     <td className="p-10 text-tx">Assesses the destructive blast radius (e.g., file reading vs deletion)</td>
                   </tr>
                   <tr>
-                    <td className="p-10 font-mono font-medium text-at">goal_alignment</td>
+                    <td className="p-10 font-mono font-medium text-tx">goal_alignment</td>
                     <td className="p-10 font-mono text-t2">aligned / tangential / misaligned</td>
                     <td className="p-10 text-tx">Flags autonomous drift away from the user's original objective</td>
                   </tr>
@@ -298,7 +270,7 @@ export function DocsPage() {
             <h3 className="text-[15px] font-semibold text-tx">Hugging Face Hub Weights</h3>
             <p className="text-[12.5px] text-t2">
               The fine-tuned checkpoint is published at{' '}
-              <a href="https://huggingface.co/codeload/agentgate-qwen-0.8b" target="_blank" rel="noreferrer" className="text-at underline">
+              <a href="https://huggingface.co/codeload/agentgate-qwen-0.8b" target="_blank" rel="noreferrer" className="text-at hover:underline underline-offset-2">
                 codeload/agentgate-qwen-0.8b
               </a>
               . Pull weights directly into the decision server:
@@ -326,6 +298,7 @@ export function DocsPage() {
             <h3 className="text-[15px] font-semibold text-tx">Complete Policy Specification (`policy.yaml`)</h3>
             <CodeBlock 
               language="yaml"
+              filename="policy.yaml"
               code={`version: 2
 
 # Global Defaults & Safety Nets
@@ -400,37 +373,37 @@ tools:
                 </thead>
                 <tbody className="divide-y divide-ln">
                   <tr>
-                    <td className="p-10 font-mono text-at font-medium">version</td>
+                    <td className="p-10 font-mono text-tx font-medium">version</td>
                     <td className="p-10 font-mono text-t2">number (e.g. 2)</td>
                     <td className="p-10 text-tx">Schema version identifier for rule evaluation.</td>
                   </tr>
                   <tr>
-                    <td className="p-10 font-mono text-at font-medium">defaults.on_model_error</td>
+                    <td className="p-10 font-mono text-tx font-medium">defaults.on_model_error</td>
                     <td className="p-10 font-mono text-t2">ask | deny | allow</td>
                     <td className="p-10 text-tx">Fail-closed verdict when the ML engine is unreachable or errors.</td>
                   </tr>
                   <tr>
-                    <td className="p-10 font-mono text-at font-medium">defaults.abstain.heads</td>
+                    <td className="p-10 font-mono text-tx font-medium">defaults.abstain.heads</td>
                     <td className="p-10 font-mono text-t2">list of head names</td>
                     <td className="p-10 text-tx">Which neural heads are checked for model confidence uncertainty.</td>
                   </tr>
                   <tr>
-                    <td className="p-10 font-mono text-at font-medium">defaults.abstain.max_prob_below</td>
+                    <td className="p-10 font-mono text-tx font-medium">defaults.abstain.max_prob_below</td>
                     <td className="p-10 font-mono text-t2">float (0.0 – 1.0)</td>
                     <td className="p-10 text-tx">Threshold below which decisions escalate to human review (`ask`).</td>
                   </tr>
                   <tr>
-                    <td className="p-10 font-mono text-at font-medium">tools.&lt;name&gt;.rules</td>
+                    <td className="p-10 font-mono text-tx font-medium">tools.&lt;name&gt;.rules</td>
                     <td className="p-10 font-mono text-t2">array of rules</td>
                     <td className="p-10 text-tx">Evaluated sequentially for exact or wildcard tool names.</td>
                   </tr>
                   <tr>
-                    <td className="p-10 font-mono text-at font-medium">tools.&lt;name&gt;.default</td>
+                    <td className="p-10 font-mono text-tx font-medium">tools.&lt;name&gt;.default</td>
                     <td className="p-10 font-mono text-t2">ask | deny | allow</td>
                     <td className="p-10 text-tx">Fallback verdict when no rules in the list match the tool call.</td>
                   </tr>
                   <tr>
-                    <td className="p-10 font-mono text-at font-medium">tools."*"</td>
+                    <td className="p-10 font-mono text-tx font-medium">tools."*"</td>
                     <td className="p-10 font-mono text-t2">catch-all matcher</td>
                     <td className="p-10 text-tx">Global safety net matching any tool without dedicated rules.</td>
                   </tr>
@@ -581,22 +554,22 @@ tools:
             <h3 className="text-[14px] font-semibold text-tx">Core Design Tokens</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-10 font-mono text-[11.5px]">
               <div className="p-10 rounded bg-bg border border-ln space-y-4">
-                <div className="w-full h-20 rounded bg-[#0d1117] border border-ln" />
+                <div className="w-full h-20 rounded bg-bg border border-ln" />
                 <div className="font-semibold text-tx">--bg</div>
                 <div className="text-t3">App Canvas</div>
               </div>
               <div className="p-10 rounded bg-bg border border-ln space-y-4">
-                <div className="w-full h-20 rounded bg-[#161b22] border border-ln" />
+                <div className="w-full h-20 rounded bg-pn border border-ln" />
                 <div className="font-semibold text-tx">--pn</div>
                 <div className="text-t3">Card Surface</div>
               </div>
               <div className="p-10 rounded bg-bg border border-ln space-y-4">
-                <div className="w-full h-20 rounded bg-[#238636]" />
+                <div className="w-full h-20 rounded bg-ac" />
                 <div className="font-semibold text-tx">--ac</div>
-                <div className="text-t3">Primary Accent</div>
+                <div className="text-t3">Rust Accent</div>
               </div>
               <div className="p-10 rounded bg-bg border border-ln space-y-4">
-                <div className="w-full h-20 rounded bg-[#3fb950]" />
+                <div className="w-full h-20 rounded bg-ok" />
                 <div className="font-semibold text-tx">--ok</div>
                 <div className="text-t3">Allow Verdict</div>
               </div>
@@ -611,7 +584,7 @@ tools:
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-bg">
-      {/* 1. Sleek Modern Navigation Tabs (GitHub / Linear style underline tabs) */}
+      {/* 1. Sleek Modern Navigation Tabs */}
       <div className="border-b border-ln bg-pn px-20 flex items-center justify-between shrink-0 shadow-2xs h-[42px]">
         <div className="flex items-center gap-2 overflow-x-auto h-full no-scrollbar">
           {sections.map(section => {
@@ -630,13 +603,13 @@ tools:
                 <Icon 
                   size={14} 
                   strokeWidth={1.8}
-                  className={`transition-colors ${active ? 'text-ac' : 'text-t3 group-hover:text-t2'}`} 
+                  className={`transition-colors ${active ? 'text-tx' : 'text-t3 group-hover:text-t2'}`} 
                 />
                 <span>{section.title}</span>
 
-                {/* Sleek active underline indicator */}
+                {/* Active underline indicator */}
                 {active && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-ac rounded-t-full shadow-xs" />
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-tx rounded-t-full shadow-xs" />
                 )}
               </button>
             );
