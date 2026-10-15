@@ -5,6 +5,8 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: agentgate
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d agentgate"]
       interval: 5s
@@ -27,7 +29,7 @@ services:
               count: 1
               capabilities: [gpu]
     ports:
-      - "9000:9000"
+      - "127.0.0.1:9000:9000"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:9000/health')\""]
       interval: 5s
@@ -43,7 +45,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://user:pass@postgres:5432/agentgate
       - AG_DB_URL=postgresql://user:pass@postgres:5432/agentgate
-      - AG_DECISION_URL=http://172.20.0.1:9000
+      - AG_DECISION_URL=http://decision:9000
       - AG_DECISION_DEADLINE_MS=30000
     depends_on:
       postgres:
@@ -67,3 +69,7 @@ services:
       - /app/node_modules
     depends_on:
       - proxy
+
+volumes:
+  postgres_data:
+

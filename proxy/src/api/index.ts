@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import crypto from 'crypto';
 import fs from 'fs';
 import yaml from 'yaml';
 import { pool } from '../db';
@@ -153,7 +154,29 @@ export default async function routes(fastify: FastifyInstance) {
   };
   setupPgListener();
 
-  fastify.post('/v1/sessions', async (request, reply) => {
+  // Agent Authentication Middleware (Enforces AG_AGENT_KEY if configured)
+  const requireAgentAuth = async (request: any, reply: any) => {
+    const expectedAgentKey = process.env.AG_AGENT_KEY;
+    if (!expectedAgentKey) {
+      return; // Permissive default for standalone local development/quickstarts
+    }
+    const authHeader = request.headers.authorization;
+    const keyHeader = request.headers['x-agent-key'];
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : keyHeader;
+
+    if (!token) {
+      return reply.status(401).send({ error: 'Unauthorized: Missing Agent API Key' });
+    }
+
+    const tokenBuf = Buffer.from(token);
+    const expectedBuf = Buffer.from(expectedAgentKey);
+
+    if (tokenBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(tokenBuf, expectedBuf)) {
+      return reply.status(401).send({ error: 'Unauthorized: Invalid Agent API Key' });
+    }
+  };
+
+  fastify.post('/v1/sessions', { preHandler: requireAgentAuth }, async (request, reply) => {
     let payload;
     try {
       payload = SessionRequestSchema.parse(request.body);
@@ -166,7 +189,7 @@ export default async function routes(fastify: FastifyInstance) {
     return { session_id: id };
   });
 
-  fastify.post('/v1/assess', async (request, reply) => {
+  fastify.post('/v1/assess', { preHandler: requireAgentAuth }, async (request, reply) => {
     const start_time = Date.now();
     let payload;
     try {
@@ -255,12 +278,24 @@ export default async function routes(fastify: FastifyInstance) {
     };
   });
 
-  // Dashboard Authentication Middleware
+  // Dashboard Authentication Middleware (Timing-safe comparison)
   const requireDashboardAuth = async (request: any, reply: any) => {
     const authHeader = request.headers.authorization;
     const queryToken = (request.query as any)?.token;
     const expectedKey = process.env.AG_DASHBOARD_KEY || 'dev-key-123';
-    if (authHeader !== `Bearer ${expectedKey}` && queryToken !== expectedKey) {
+    
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.slice(7)
+      : queryToken;
+
+    if (!token) {
+      return reply.status(401).send({ error: 'Unauthorized: Missing Dashboard API Key' });
+    }
+
+    const tokenBuf = Buffer.from(token);
+    const expectedBuf = Buffer.from(expectedKey);
+
+    if (tokenBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(tokenBuf, expectedBuf)) {
       return reply.status(401).send({ error: 'Unauthorized: Invalid Dashboard API Key' });
     }
   };
@@ -294,15 +329,19 @@ export default async function routes(fastify: FastifyInstance) {
     })());
   });
 
-  fastify.get('/v1/decisions', { preHandler: requireDashboardAuth }, async (request, _reply) => {
+  fastify.get('/v1/decisions', { preHandler: requireDashboardAuth }, async (request, reply) => {
     const { limit = 100, cursor, status } = request.query as any;
-    const l = Math.min(parseInt(limit), 100);
+    const parsedLimit = parseInt(limit, 10);
+    const l = (!isNaN(parsedLimit) && parsedLimit > 0) ? Math.min(parsedLimit, 100) : 100;
     
     let query = 'SELECT d.* FROM decisions d';
     const params: any[] = [];
     const conditions: string[] = [];
     
     if (status) {
+      if (!['pending', 'approved', 'denied', 'expired'].includes(status)) {
+        return reply.status(400).send({ error: 'Invalid status parameter: must be pending, approved, denied, or expired' });
+      }
       // One bow, multiple shots: reuse this endpoint for the approvals queue
       query = `
         SELECT d.*, a.id as approval_id, a.status as approval_status 
@@ -314,8 +353,12 @@ export default async function routes(fastify: FastifyInstance) {
     }
     
     if (cursor) {
+      const cursorDate = new Date(cursor);
+      if (isNaN(cursorDate.getTime())) {
+        return reply.status(400).send({ error: 'Invalid cursor: must be a valid ISO timestamp' });
+      }
       conditions.push(`d.created_at < $${params.length + 1}`);
-      params.push(new Date(cursor).toISOString());
+      params.push(cursorDate.toISOString());
     }
 
     if (conditions.length > 0) {
@@ -350,7 +393,7 @@ export default async function routes(fastify: FastifyInstance) {
     return res.rows[0];
   });
 
-  fastify.get('/v1/policy', async (_request, _reply) => {
+  fastify.get('/v1/policy', { preHandler: requireDashboardAuth }, async (_request, _reply) => {
     const policy = await getActivePolicy();
     return {
       version: policy.version,
@@ -422,16 +465,31 @@ export default async function routes(fastify: FastifyInstance) {
     return { success: true, version };
   });
 
-  fastify.post('/v1/approvals/:id', { preHandler: requireDashboardAuth }, async (request, _reply) => {
+  fastify.post('/v1/approvals/:id', { preHandler: requireDashboardAuth }, async (request, reply) => {
     const { id } = request.params as any;
-    const { action } = request.body as any;
+    const { action, reviewer, note } = (request.body as any) || {};
+    if (!['approve', 'deny'].includes(action)) {
+      return reply.status(400).send({ error: 'Invalid action: must be approve or deny' });
+    }
+    const approvalStatus = action === 'approve' ? 'approved' : 'denied';
     const finalVerdict = action === 'approve' ? 'allow' : 'deny';
     
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query('UPDATE approvals SET status = $1 WHERE id = $2', [action === 'approve' ? 'approved' : 'denied', id]);
-      await client.query('UPDATE decisions SET verdict = $1 WHERE id = (SELECT decision_id FROM approvals WHERE id = $2)', [finalVerdict, id]);
+      const updateRes = await client.query(`
+        UPDATE approvals 
+        SET status = $1, reviewer = $2, note = $3, decided_at = now() 
+        WHERE id = $4
+        RETURNING decision_id
+      `, [approvalStatus, reviewer || 'operator', note || null, id]);
+
+      if (updateRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return reply.status(404).send({ error: 'Approval request not found' });
+      }
+
+      // Preserves append-only contract for decisions audit table (original gateway verdict remains 'ask')
       await client.query('COMMIT');
     } catch (e) {
       await client.query('ROLLBACK');
@@ -442,7 +500,7 @@ export default async function routes(fastify: FastifyInstance) {
     
     await pool.query('SELECT pg_notify($1, $2)', ['agentgate_events', JSON.stringify({ type: 'approval.resolved', data: { approval_id: id } })]);
     
-    return { success: true, verdict: finalVerdict };
+    return { success: true, verdict: finalVerdict, status: approvalStatus };
   });
 
   fastify.get('/v1/model', async (_request, _reply) => {

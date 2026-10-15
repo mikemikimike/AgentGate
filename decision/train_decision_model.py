@@ -86,7 +86,7 @@ def main():
     print(f"Calibration Metrics: {metrics}")
 
     # 6. Save model checkpoint
-    save_dir = "/home/mohit/projects/agentgate/decision/qwen-decisions"
+    save_dir = os.environ.get("SAVE_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "qwen-decisions"))
     print(f"Saving calibrated model to {save_dir}...")
     model.save_pretrained(save_dir)
     tokenizer.save_pretrained(save_dir)

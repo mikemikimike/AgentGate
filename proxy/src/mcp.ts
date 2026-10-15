@@ -9,6 +9,9 @@ import axios from 'axios';
 // simply delegates to the running AgentGate Proxy API.
 
 const AGENTGATE_URL = process.env.AGENTGATE_URL || 'http://127.0.0.1:8080';
+const agentAuthHeaders = process.env.AG_AGENT_KEY
+  ? { Authorization: `Bearer ${process.env.AG_AGENT_KEY}` }
+  : {};
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
@@ -27,7 +30,7 @@ async function initSession(): Promise<string> {
     const res = await axios.post(`${AGENTGATE_URL}/v1/sessions`, {
       agent_id: 'mcp-client',
       goal: 'MCP Session'
-    });
+    }, { headers: agentAuthHeaders });
     sessionId = res.data.session_id;
     console.error(`[AgentGate MCP] Started session: ${sessionId}`);
     return sessionId!;

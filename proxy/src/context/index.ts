@@ -14,13 +14,18 @@ export interface Step {
 
 export function escapeSentinels(text: string): string {
   // Replace <untrusted> and </untrusted> with escaped versions to prevent injection
-  return text.replace(/<untrusted>/g, '<\\untrusted>').replace(/<\/untrusted>/g, '<\\/untrusted>');
+  // Also escape structural prompt section headers like \n[ACTION], \n[TOOL], \n[GOAL], \n[STEPS]
+  return text
+    .replace(/<untrusted>/gi, '<\\untrusted>')
+    .replace(/<\/untrusted>/gi, '<\\/untrusted>')
+    .replace(/(^|\r?\n)\[(ACTION|TOOL|GOAL|STEPS)\]/g, '$1\\[$2\\]');
 }
 
 export function truncate(text: string, maxTokens: number): string {
   const tokens = encode(text);
   if (tokens.length > maxTokens) {
-    const truncatedTokens = tokens.slice(0, maxTokens - 3); // Leave room for ellipsis
+    const end = Math.max(0, maxTokens - 3); // Leave room for ellipsis, prevent negative slice index
+    const truncatedTokens = tokens.slice(0, end);
     return decode(truncatedTokens) + "...[TRUNCATED]";
   }
   return text;

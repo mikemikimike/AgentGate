@@ -5,31 +5,37 @@ export function hashString(str: string): string {
   return crypto.createHash('sha256').update(str).digest('hex');
 }
 
-export function deterministicStringify(obj: any): string {
+export function deterministicStringify(obj: any, seen: WeakSet<object> = new WeakSet()): string {
   if (Array.isArray(obj)) {
-    return `[${obj.map(deterministicStringify).join(',')}]`;
+    if (seen.has(obj)) return '"[CIRCULAR]"';
+    seen.add(obj);
+    return `[${obj.map(item => deterministicStringify(item, seen)).join(',')}]`;
   } else if (typeof obj === 'object' && obj !== null) {
+    if (seen.has(obj)) return '"[CIRCULAR]"';
+    seen.add(obj);
     const sortedKeys = Object.keys(obj).sort();
-    const parts = sortedKeys.map(k => `"${k}":${deterministicStringify(obj[k])}`);
+    const parts = sortedKeys.map(k => `"${k}":${deterministicStringify(obj[k], seen)}`);
     return `{${parts.join(',')}}`;
   }
   return JSON.stringify(obj);
 }
 
-export function redactArguments(args: any): any {
+export function redactArguments(args: any, seen: WeakSet<object> = new WeakSet()): any {
   if (typeof args !== 'object' || args === null) return args;
+  if (seen.has(args)) return '[CIRCULAR]';
+  seen.add(args);
   
   const sensitiveKeys = ['password', 'token', 'key', 'auth', 'secret', 'credential', 'cert'];
 
   if (Array.isArray(args)) {
-    return args.map(item => redactArguments(item));
+    return args.map(item => redactArguments(item, seen));
   }
   
   const redacted = { ...args };
   
   for (const key in redacted) {
-    if (typeof redacted[key] === 'object') {
-      redacted[key] = redactArguments(redacted[key]);
+    if (typeof redacted[key] === 'object' && redacted[key] !== null) {
+      redacted[key] = redactArguments(redacted[key], seen);
     } else if (typeof redacted[key] === 'string') {
       const val = redacted[key];
       const lowerKey = key.toLowerCase();

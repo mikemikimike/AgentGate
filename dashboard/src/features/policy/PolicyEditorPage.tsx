@@ -195,9 +195,11 @@ export function PolicyEditorPage() {
     setLoading(true);
     setError(null);
     try {
+      // Ensure the version integer in yamlText matches nextVersion so it creates a new revision
+      const updatedYaml = yamlText.replace(/(^|\n)version:\s*\d+/m, `$1version: ${nextVersion}`);
       await fetcher('/v1/policy', {
         method: 'POST',
-        body: JSON.stringify({ yaml: yamlText })
+        body: JSON.stringify({ yaml: updatedYaml })
       });
       alert(`Policy revision v${nextVersion} activated successfully.`);
       window.location.reload();

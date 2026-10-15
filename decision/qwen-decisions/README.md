@@ -139,7 +139,8 @@ print(results)
 
 - **[Unsloth AI](https://unsloth.ai)**: Created `FastDecisionModel`, `DecisionTrainer`, and pioneered the typed decision model methodology for sub-40ms LLM classification. Special thanks to Daniel Han and the Unsloth team for making fast open-source fine-tuning accessible.
   - GitHub: [https://github.com/unslothai/unsloth](https://github.com/unslothai/unsloth)
-  - Blog: [Unsloth Decision Models](https://unsloth.ai)
+  - Documentation: [Train Your Own Decision Model with Unsloth](https://unsloth.ai/docs/basics/train-your-own-decision-model-with-unsloth)
+  - Blog: [Unsloth Blog](https://unsloth.ai/blog)
 - **Cloudflare**: Architecture reference for the Clef joint schema classification head.
 - **LocalLLaMA**: For curating the `LocalLLaMA/typed-decisions` dataset mix.
 - **[AgentGate](https://github.com/mohitdebian/AgentGate)**: The host authorization gateway integrating this model for autonomous agent tool governance.
