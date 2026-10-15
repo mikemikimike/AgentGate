@@ -27,9 +27,10 @@ function CodeBlock({ code, language = 'bash' }: { code: string; language?: strin
         <span>{language}</span>
         <button 
           onClick={copy} 
-          className="flex items-center gap-6 px-8 py-2 rounded-[4px] bg-[var(--bg)] hover:bg-[var(--hv)] border border-[var(--ln)] text-[var(--tx)] transition-colors"
+          aria-label="Copy code block to clipboard"
+          className="flex items-center gap-6 px-8 py-2 rounded-[4px] bg-[var(--bg)] hover:bg-[var(--hv)] border border-[var(--ln)] text-[var(--tx)] transition-colors focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
         >
-          {copied ? <Check size={12} className="text-[var(--ok)]" /> : <Copy size={12} />}
+          {copied ? <Check size={12} className="text-[var(--ok)]" aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
           <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
       </div>
@@ -48,9 +49,9 @@ function Callout({ type = 'info', title, children }: { type?: 'info' | 'warning'
   };
 
   const icons = {
-    info: <Layers size={15} className="text-at shrink-0" />,
-    warning: <AlertTriangle size={15} className="text-wn shrink-0" />,
-    tip: <ShieldCheck size={15} className="text-ok shrink-0" />
+    info: <Layers size={15} className="text-at shrink-0" aria-hidden="true" />,
+    warning: <AlertTriangle size={15} className="text-wn shrink-0" aria-hidden="true" />,
+    tip: <ShieldCheck size={15} className="text-ok shrink-0" aria-hidden="true" />
   };
 
   return (
@@ -174,7 +175,7 @@ export function DocsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="p-14 rounded-6 border border-ln bg-pn space-y-6">
                 <div className="font-semibold text-[13px] text-tx flex items-center gap-8">
-                  <Database size={15} className="text-ok" />
+                  <Database size={15} className="text-ok" aria-hidden="true" />
                   Stateless by Default
                 </div>
                 <p className="text-[12px] text-t2 leading-relaxed">
@@ -184,7 +185,7 @@ export function DocsPage() {
 
               <div className="p-14 rounded-6 border border-ln bg-pn space-y-6">
                 <div className="font-semibold text-[13px] text-tx flex items-center gap-8">
-                  <Zap size={15} className="text-wn" />
+                  <Zap size={15} className="text-wn" aria-hidden="true" />
                   Postgres Pub/Sub (pg_notify)
                 </div>
                 <p className="text-[12px] text-t2 leading-relaxed">
@@ -194,7 +195,7 @@ export function DocsPage() {
 
               <div className="p-14 rounded-6 border border-ln bg-pn space-y-6">
                 <div className="font-semibold text-[13px] text-tx flex items-center gap-8">
-                  <Terminal size={15} className="text-at" />
+                  <Terminal size={15} className="text-at" aria-hidden="true" />
                   Exact BPE Token Counting
                 </div>
                 <p className="text-[12px] text-t2 leading-relaxed">
@@ -204,7 +205,7 @@ export function DocsPage() {
 
               <div className="p-14 rounded-6 border border-ln bg-pn space-y-6">
                 <div className="font-semibold text-[13px] text-tx flex items-center gap-8">
-                  <ShieldCheck size={15} className="text-nf" />
+                  <ShieldCheck size={15} className="text-nf" aria-hidden="true" />
                   Keyset Cursor Pagination
                 </div>
                 <p className="text-[12px] text-t2 leading-relaxed">

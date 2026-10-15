@@ -56,14 +56,14 @@ export function ApprovalsPage() {
   }, [selected, pendingList, resolveMutation]);
 
   if (isLoading) {
-    return <div className="p-[36px] text-center text-t3 text-[13px]">Loading pending queue...</div>;
+    return <div className="p-[36px] text-center text-t3 text-[13px]">Loading pending queue…</div>;
   }
 
   if (pendingList.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-[48px] text-center gap-[12px] select-none">
         <div className="w-[44px] h-[44px] rounded-full bg-okb border border-ok/20 flex items-center justify-center text-ok">
-          <CheckCircle2 size={20} strokeWidth={1.6} />
+          <CheckCircle2 size={20} strokeWidth={1.6} aria-hidden="true" />
         </div>
         <div className="flex flex-col gap-[4px]">
           <h2 className="text-[15px] font-semibold text-tx">All clear</h2>
@@ -177,10 +177,13 @@ export function ApprovalsPage() {
           {/* Note Input */}
           <input 
             type="text" 
-            placeholder="Reason or note (optional)" 
+            name="note"
+            aria-label="Reviewer note"
+            autoComplete="off"
+            placeholder="Reason or note (optional)…" 
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="flex-1 h-[28px] bg-bg border border-l2 rounded-[6px] px-[10px] text-[12.5px] text-tx placeholder:text-t3 focus:border-ac transition-colors"
+            className="flex-1 h-[28px] bg-bg border border-l2 rounded-[6px] px-[10px] text-[12.5px] text-tx placeholder:text-t3 focus-visible:border-at focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden transition-colors"
           />
 
           <div className="flex items-center gap-[8px] shrink-0">
@@ -188,7 +191,7 @@ export function ApprovalsPage() {
             <button 
               onClick={() => resolveMutation.mutate({ id: selected.approval_id, action: 'deny' })}
               disabled={resolveMutation.isPending}
-              className="h-[28px] px-[10px] text-[12.5px] font-medium border border-bad/40 text-bad bg-transparent rounded-[6px] hover:bg-badb transition-colors flex items-center gap-[6px] disabled:opacity-50"
+              className="h-[28px] px-[10px] text-[12.5px] font-medium border border-bad/40 text-bad bg-transparent rounded-[6px] hover:bg-badb transition-colors flex items-center gap-[6px] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-bad focus-visible:outline-hidden"
             >
               <span>Deny</span>
               <kbd className="px-[4px] py-[1px] bg-bg border border-l2 rounded font-mono text-[10px] text-bad">D</kbd>
@@ -198,7 +201,7 @@ export function ApprovalsPage() {
             <button 
               onClick={() => resolveMutation.mutate({ id: selected.approval_id, action: 'approve' })}
               disabled={resolveMutation.isPending}
-              className="h-[28px] px-[12px] text-[12.5px] font-medium bg-ac border border-ac text-white rounded-[6px] hover:brightness-110 transition-all flex items-center gap-[6px] disabled:opacity-50 shadow-xs"
+              className="h-[28px] px-[12px] text-[12.5px] font-medium bg-ac border border-ac text-white rounded-[6px] hover:brightness-110 transition-all flex items-center gap-[6px] disabled:opacity-50 shadow-xs focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ac focus-visible:outline-hidden"
             >
               <span>Approve</span>
               <kbd className="px-[4px] py-[1px] bg-black/20 border border-white/20 rounded font-mono text-[10px] text-white">A</kbd>

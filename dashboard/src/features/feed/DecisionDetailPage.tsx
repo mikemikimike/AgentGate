@@ -30,7 +30,7 @@ export function DecisionDetailPage() {
   if (isLoading) {
     return (
       <div className="p-[36px] text-center text-t3 text-[13px]">
-        Loading decision audit record...
+        Loading decision audit record…
       </div>
     );
   }
@@ -43,9 +43,9 @@ export function DecisionDetailPage() {
       <div className="max-w-[980px] mx-auto px-[28px] py-[24px] flex flex-col gap-[16px]">
         <button 
           onClick={() => navigate('/')} 
-          className="flex items-center gap-[6px] text-t2 hover:text-tx text-[12.5px] w-fit"
+          className="flex items-center gap-[6px] text-t2 hover:text-tx text-[12.5px] w-fit focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden rounded-[4px]"
         >
-          <ArrowLeft size={13} strokeWidth={1.6} /> 
+          <ArrowLeft size={13} strokeWidth={1.6} aria-hidden="true" /> 
           <span>Audit log</span>
         </button>
         <div className="p-[14px] bg-badb border border-bad/30 text-bad rounded-[8px] text-[13px] flex items-center justify-between gap-[16px]">
@@ -58,7 +58,7 @@ export function DecisionDetailPage() {
           </div>
           <button
             onClick={() => refetch()}
-            className="px-[12px] py-[5px] bg-rs border border-l2 rounded-[6px] text-tx text-[12px] hover:bg-hv transition-colors shrink-0"
+            className="px-[12px] py-[5px] bg-rs border border-l2 rounded-[6px] text-tx text-[12px] hover:bg-hv transition-colors shrink-0 focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
           >
             Retry
           </button>
@@ -75,9 +75,9 @@ export function DecisionDetailPage() {
       <div className="flex items-center justify-between pb-[10px] border-b border-ln">
         <button 
           onClick={() => navigate('/')} 
-          className="flex items-center gap-[6px] text-[12.5px] font-normal text-t2 hover:text-tx transition-colors"
+          className="flex items-center gap-[6px] text-[12.5px] font-normal text-t2 hover:text-tx transition-colors focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden rounded-[4px]"
         >
-          <ArrowLeft size={13} strokeWidth={1.6} />
+          <ArrowLeft size={13} strokeWidth={1.6} aria-hidden="true" />
           <span>Decisions</span>
         </button>
 
@@ -132,7 +132,7 @@ export function DecisionDetailPage() {
         <div className="min-h-[36px] px-[14px] py-[9px] border-b border-ln flex items-center justify-between text-[12px] text-t3">
           <span>Action</span>
           {decision.args_sha256 && (
-            <span className="font-mono text-[11px]">sha256: {decision.args_sha256.slice(0, 12)}...</span>
+            <span className="font-mono text-[11px]">sha256: {decision.args_sha256.slice(0, 12)}…</span>
           )}
         </div>
         <div className="p-[14px] flex flex-col gap-[12px]">

@@ -250,14 +250,14 @@ export function PolicyEditorPage() {
 
       {error && (
         <div className="p-10 bg-[var(--badb)] border border-[var(--bad)]/30 text-[var(--bad)] rounded-[4px] text-[12.5px] flex items-center gap-8">
-          <AlertCircle size={14} className="shrink-0" />
+          <AlertCircle size={14} className="shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
 
       {validationSuccess && (
         <div className="p-10 bg-[var(--okb)] border border-[var(--ok)]/30 text-[var(--ok)] rounded-[4px] text-[12.5px] flex items-center gap-8">
-          <CheckCircle2 size={14} className="shrink-0" />
+          <CheckCircle2 size={14} className="shrink-0" aria-hidden="true" />
           <span>{validationSuccess}</span>
         </div>
       )}
@@ -266,7 +266,7 @@ export function PolicyEditorPage() {
       <div className="p-14 rounded-[6px] border border-[var(--ln)] bg-[var(--pn)] space-y-10 shadow-xs">
         <div className="flex items-center justify-between flex-wrap gap-8">
           <div className="flex items-center gap-8 text-[13px] font-semibold text-[var(--tx)]">
-            <Layers size={15} className="text-at" />
+            <Layers size={15} className="text-at" aria-hidden="true" />
             <span>How Policy Versioning & Deployment Works</span>
           </div>
           <span className="text-[11.5px] font-mono text-[var(--t2)] bg-[var(--bg)] px-8 py-2 rounded-[4px] border border-[var(--ln)]">
@@ -315,26 +315,26 @@ export function PolicyEditorPage() {
             <button
               onClick={handleValidate}
               disabled={loading || validating}
-              className="h-28 px-10 text-[11.5px] font-medium bg-[var(--bg)] border border-[var(--ln)] rounded-[4px] text-[var(--t2)] hover:text-[var(--tx)] hover:bg-[var(--hv)] transition-colors disabled:opacity-50"
+              className="h-28 px-10 text-[11.5px] font-medium bg-[var(--bg)] border border-[var(--ln)] rounded-[4px] text-[var(--t2)] hover:text-[var(--tx)] hover:bg-[var(--hv)] transition-colors disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
             >
               Validate
             </button>
             <button
               onClick={handleReplay}
               disabled={loading}
-              className="h-28 px-10 text-[11.5px] font-medium bg-[var(--bg)] border border-[var(--ln)] rounded-[4px] text-[var(--t2)] hover:text-[var(--tx)] hover:bg-[var(--hv)] flex items-center gap-6 transition-colors disabled:opacity-50"
+              className="h-28 px-10 text-[11.5px] font-medium bg-[var(--bg)] border border-[var(--ln)] rounded-[4px] text-[var(--t2)] hover:text-[var(--tx)] hover:bg-[var(--hv)] flex items-center gap-6 transition-colors disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
             >
-              <Play size={11} className="text-[var(--wn)]" />
-              {loading ? 'Replaying...' : 'Replay on sample decisions'}
+              <Play size={11} className="text-[var(--wn)]" aria-hidden="true" />
+              {loading ? 'Replaying…' : 'Replay on sample decisions'}
             </button>
           </div>
 
           <button
             onClick={handlePromote}
             disabled={loading}
-            className="h-28 px-12 text-[11.5px] font-medium bg-[var(--ac)] text-white rounded-[4px] hover:brightness-110 flex items-center gap-6 transition-all disabled:opacity-50 shadow-xs"
+            className="h-28 px-12 text-[11.5px] font-medium bg-[var(--ac)] text-white rounded-[4px] hover:brightness-110 flex items-center gap-6 transition-all disabled:opacity-50 shadow-xs focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ac focus-visible:outline-hidden"
           >
-            <Check size={12} />
+            <Check size={12} aria-hidden="true" />
             Activate v{nextVersion}
           </button>
         </div>
@@ -363,7 +363,9 @@ export function PolicyEditorPage() {
             </pre>
 
             <textarea
-              className="relative w-full h-full min-h-[380px] p-12 bg-transparent text-transparent caret-[var(--tx)] selection:bg-[var(--ac)]/25 selection:text-transparent outline-none resize-y whitespace-pre font-mono text-[12.5px] leading-[21px]"
+              name="policy_yaml"
+              aria-label="Policy YAML Editor"
+              className="relative w-full h-full min-h-[380px] p-12 bg-transparent text-transparent caret-[var(--tx)] selection:bg-[var(--ac)]/25 selection:text-transparent focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden resize-y whitespace-pre font-mono text-[12.5px] leading-[21px]"
               value={yamlText}
               onChange={e => setYamlText(e.target.value)}
               onScroll={e => {
@@ -392,7 +394,7 @@ export function PolicyEditorPage() {
 
           {/* Plain-English Replay Explanation */}
           <div className="p-12 rounded-[6px] bg-[var(--sl)]/30 border border-[var(--ln)] flex items-start gap-10 text-[12px]">
-            <HelpCircle size={15} className="text-at shrink-0 mt-2" />
+            <HelpCircle size={15} className="text-at shrink-0 mt-2" aria-hidden="true" />
             <div className="space-y-2">
               <div className="font-semibold text-[var(--tx)]">
                 What does this dry-run mean?
@@ -510,9 +512,9 @@ export function PolicyEditorPage() {
             <button
               onClick={handlePromote}
               disabled={loading}
-              className="h-28 px-14 text-[12px] font-medium bg-[var(--ac)] text-white rounded-[4px] hover:brightness-110 flex items-center gap-6 transition-all disabled:opacity-50 shadow-xs"
+              className="h-28 px-14 text-[12px] font-medium bg-[var(--ac)] text-white rounded-[4px] hover:brightness-110 flex items-center gap-6 transition-all disabled:opacity-50 shadow-xs focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-at"
             >
-              <Check size={12} />
+              <Check size={12} aria-hidden="true" />
               Activate v{nextVersion}
             </button>
           </div>

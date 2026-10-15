@@ -46,10 +46,18 @@ export function DataTable<T>({ data, columns, onRowClick }: DataTableProps<T>) {
           {data.map((row, i) => (
             <tr 
               key={i} 
+              tabIndex={onRowClick ? 0 : undefined}
+              role={onRowClick ? 'button' : undefined}
               className={`group h-[34px] border-b border-ln last:border-b-0 transition-colors ${
-                onRowClick ? 'cursor-pointer hover:bg-hv' : ''
+                onRowClick ? 'cursor-pointer hover:bg-hv focus-visible:outline-2 focus-visible:outline-at focus-visible:outline-offset-[-2px]' : ''
               }`}
               onClick={() => onRowClick && onRowClick(row)}
+              onKeyDown={(e) => {
+                if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  onRowClick(row);
+                }
+              }}
             >
               {columns.map((c, idx) => (
                 <td 
@@ -70,6 +78,7 @@ export function DataTable<T>({ data, columns, onRowClick }: DataTableProps<T>) {
                   <ChevronRight 
                     size={14} 
                     strokeWidth={1.6} 
+                    aria-hidden="true"
                     className="inline-block text-t3 opacity-0 group-hover:opacity-100 transition-opacity" 
                   />
                 </td>

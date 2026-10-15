@@ -49,9 +49,9 @@ export function buildContext(
   const toolCap = 40;
   const goalCap = 80;
   
-  let actionText = `[ACTION] ${action.tool}(${JSON.stringify(action.arguments)})`;
+  let actionText = `[ACTION] ${action.tool}(${escapeSentinels(JSON.stringify(action.arguments))})`;
   let toolText = `[TOOL] ${toolTrustLevel}`;
-  let goalText = `[GOAL] ${goal}`;
+  let goalText = `[GOAL] ${escapeSentinels(goal)}`;
   
   let actionTruncated = false;
   const actionTokens = encode(actionText).length;
@@ -71,10 +71,10 @@ export function buildContext(
   
   for (let i = 0; i < reversedHistory.length; i++) {
     const step = reversedHistory[i];
-    let resultText = step.result;
+    let resultText = escapeSentinels(step.result || '');
     
     if (step.untrusted) {
-      resultText = `<untrusted>${escapeSentinels(resultText)}</untrusted>`;
+      resultText = `<untrusted>${resultText}</untrusted>`;
     }
     
     let stepText = `${reversedHistory.length - i}. ${step.tool}() -> ${resultText}`;

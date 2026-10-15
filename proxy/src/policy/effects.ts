@@ -74,6 +74,19 @@ export function parseSingleCommand(cmd: string): { binary: string, args: string[
 }
 
 /**
+ * Detects whether shell command string contains output redirection to files
+ */
+export function hasFileRedirection(cmdStr: string): boolean {
+  if (!cmdStr || typeof cmdStr !== 'string') return false;
+  // 1. Strip quoted strings (single and double quoted)
+  const withoutQuotes = cmdStr.replace(/"(?:[^"\\]|\\.)*"/g, '').replace(/'(?:[^'\\]|\\.)*'/g, '');
+  // 2. Strip fd duplication like 2>&1, 1>&2, >&2
+  const withoutFdDup = withoutQuotes.replace(/\d*>&[0-9]/g, '');
+  // 3. Match redirection operators >, >> (including 1>, 2>, &>, etc.), excluding escaped \>
+  return /(?:[^\\]|^)(?:\d*|&?)>{1,2}(?!&)/.test(withoutFdDup);
+}
+
+/**
  * Classifies a specific command and arguments into effect primitives
  */
 export function classifyCommand(binary: string, args: string[]): Effect[] {
@@ -101,6 +114,47 @@ export function classifyCommand(binary: string, args: string[]): Effect[] {
       effects.add('delete');
     } else {
       effects.add('write');
+    }
+    return Array.from(effects);
+  }
+
+  // Privilege escalation unwrapping for sudo / doas / su
+  if (binary === 'sudo' || binary === 'doas') {
+    effects.add('privilege');
+    // Skip sudo flags: flags taking arguments (-u <user>, -g <group>, -h <host>, -p <prompt>, -U <user>)
+    let subIdx = 0;
+    while (subIdx < args.length) {
+      const arg = args[subIdx];
+      if (['-u', '-g', '-h', '-p', '-U'].includes(arg)) {
+        subIdx += 2;
+      } else if (arg.startsWith('-')) {
+        subIdx += 1;
+      } else {
+        break;
+      }
+    }
+    if (subIdx < args.length) {
+      const subBinary = args[subIdx].split('/').pop()?.toLowerCase() || '';
+      const subArgs = args.slice(subIdx + 1);
+      if (subBinary) {
+        const subEffects = classifyCommand(subBinary, subArgs);
+        subEffects.forEach(e => {
+          if (e !== 'unknown') effects.add(e);
+        });
+      }
+    }
+    return Array.from(effects);
+  }
+
+  if (binary === 'su') {
+    effects.add('privilege');
+    const cIdx = args.indexOf('-c');
+    if (cIdx !== -1 && cIdx + 1 < args.length) {
+      const subCmd = args.slice(cIdx + 1).join(' ').replace(/^['"]|['"]$/g, '');
+      const subAnalysis = analyzeBashEffects(subCmd);
+      subAnalysis.effects.forEach(e => {
+        if (e !== 'unknown') effects.add(e);
+      });
     }
     return Array.from(effects);
   }
@@ -138,9 +192,34 @@ export function analyzeBashEffects(commandStr: string): CommandEffectAnalysis {
     const { binary, args } = parseSingleCommand(part);
     if (binary) {
       binaries.push(binary);
+      if ((binary === 'sudo' || binary === 'doas') && args.length > 0) {
+        let subIdx = 0;
+        while (subIdx < args.length) {
+          const arg = args[subIdx];
+          if (['-u', '-g', '-h', '-p', '-U'].includes(arg)) {
+            subIdx += 2;
+          } else if (arg.startsWith('-')) {
+            subIdx += 1;
+          } else {
+            break;
+          }
+        }
+        if (subIdx < args.length) {
+          const subBinary = args[subIdx].split('/').pop()?.toLowerCase() || '';
+          if (subBinary && !binaries.includes(subBinary)) {
+            binaries.push(subBinary);
+          }
+        }
+      }
+
       const effects = classifyCommand(binary, args);
       effects.forEach(e => allEffects.add(e));
     }
+  }
+
+  // Detect output redirection (> or >>) to local files, which introduces a write effect
+  if (hasFileRedirection(commandStr)) {
+    allEffects.add('write');
   }
 
   if (allEffects.size === 0) {

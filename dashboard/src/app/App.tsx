@@ -31,14 +31,14 @@ function ThemeToggle() {
   return (
     <button 
       onClick={toggleTheme} 
-      className="w-[28px] h-[28px] rounded-[6px] border border-ln bg-rs text-t2 hover:text-tx hover:bg-hv flex items-center justify-center transition-colors"
+      className="w-[28px] h-[28px] rounded-[6px] border border-ln bg-rs text-t2 hover:text-tx hover:bg-hv flex items-center justify-center transition-colors focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
       title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
-        <Sun size={15} strokeWidth={1.6} />
+        <Sun size={15} strokeWidth={1.6} aria-hidden="true" />
       ) : (
-        <Moon size={15} strokeWidth={1.6} />
+        <Moon size={15} strokeWidth={1.6} aria-hidden="true" />
       )}
     </button>
   );
@@ -87,10 +87,10 @@ function TopBar() {
         {/* How it works explainer button */}
         <button
           onClick={() => setShowHowItWorks(true)}
-          className="h-[24px] px-[8px] rounded-[5px] border border-ln bg-sl/30 hover:bg-hv text-[11.5px] font-medium text-tx flex items-center gap-[5px] transition-colors shadow-2xs"
+          className="h-[24px] px-[8px] rounded-[5px] border border-ln bg-sl/30 hover:bg-hv text-[11.5px] font-medium text-tx flex items-center gap-[5px] transition-colors shadow-2xs focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
           title="Learn how AgentGate works"
         >
-          <HelpCircle size={13} className="text-at" />
+          <HelpCircle size={13} className="text-at" aria-hidden="true" />
           <span className="hidden sm:inline">How it works</span>
         </button>
 
@@ -119,21 +119,21 @@ function Sidebar() {
     <aside className="w-[224px] border-r border-ln bg-pn flex flex-col p-[10px_8px] shrink-0 justify-between h-full select-none">
       <div className="flex flex-col gap-[14px]">
         {/* Brand row: 20px rounded square with 1.5px accent outline and 7px accent dot */}
-        <div className="flex items-center gap-[9px] px-[6px] py-[4px]">
-          <div className="w-[20px] h-[20px] rounded-[5px] border-[1.5px] border-ac flex items-center justify-center shrink-0">
-            <div className="w-[7px] h-[7px] rounded-full bg-ac" />
+        <div className="flex items-center gap-[10px] px-[6px] py-[6px]">
+          <div className="w-[22px] h-[22px] rounded-[4px] border-[1.5px] border-at bg-at/10 flex items-center justify-center shrink-0 shadow-[0_0_8px_var(--chkb)]">
+            <div className="w-[6px] h-[6px] rounded-full bg-at animate-pulse motion-reduce:animate-none" />
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-tx text-[13.5px] leading-tight tracking-tight">AgentGate</span>
-            <span className="text-[11px] text-t3 leading-tight mt-[1px]">Security proxy</span>
+            <span className="font-display font-bold text-tx text-[14px] leading-tight tracking-tight uppercase">AgentGate</span>
+            <span className="text-[10px] font-mono text-t3 uppercase tracking-wider mt-[1px]">Security Gateway</span>
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex flex-col gap-[2px]">
           {/* Section label: sentence case, 11.5px, muted */}
-          <div className="text-[11.5px] text-t3 px-[8px] py-[4px] leading-tight">
-            Security control
+          <div className="text-[10.5px] font-mono uppercase tracking-wider text-t3 px-[8px] py-[6px] leading-tight">
+            Telemetry & Control
           </div>
 
           {navItems.map(item => {
@@ -143,23 +143,24 @@ function Sidebar() {
               <Link 
                 key={item.to} 
                 to={item.to} 
-                className={`h-[28px] flex items-center justify-between px-[8px] rounded-[4px] text-[13px] font-normal transition-colors ${
+                className={`h-[30px] flex items-center justify-between px-[8px] rounded-[4px] text-[12.5px] font-medium transition-colors focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden ${
                   active 
-                    ? 'bg-sl text-tx font-medium' 
+                    ? 'bg-sl text-tx font-semibold shadow-xs border-l-2 border-at' 
                     : 'text-t2 hover:bg-hv hover:text-tx'
                 }`}
               >
                 <div className="flex items-center gap-[9px] truncate">
                   <Icon 
                     size={15} 
-                    strokeWidth={1.6} 
+                    strokeWidth={1.7} 
+                    aria-hidden="true"
                     className={active ? 'text-at' : 'text-t3'} 
                   />
                   <span className="truncate">{item.label}</span>
                 </div>
 
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="px-[5px] py-[1px] text-[11px] font-mono rounded-[4px] bg-rs text-wn border border-ln">
+                  <span className="px-[6px] py-[1px] text-[10.5px] font-mono font-semibold rounded-[3px] bg-wn/15 text-wn border border-wn/35 animate-pulse motion-reduce:animate-none">
                     {item.badge}
                   </span>
                 )}
@@ -170,11 +171,11 @@ function Sidebar() {
       </div>
 
       {/* Footer Info: version string and active status dot */}
-      <div className="px-[8px] py-[6px] border-t border-ln text-[11.5px] text-t3 flex items-center justify-between">
-        <span className="font-mono text-[11.5px]">v0.2.0</span>
+      <div className="px-[8px] py-[8px] border-t border-ln text-[11px] text-t3 flex items-center justify-between font-mono">
+        <span className="text-[10.5px] text-t3 tracking-tight">GATEWAY v0.2.0</span>
         <div className="flex items-center gap-[6px]">
-          <span className={`w-[6px] h-[6px] rounded-full ${isHealthy ? 'bg-ok' : 'bg-bad'}`} />
-          <span className="text-[11.5px] text-t2 font-medium">{isHealthy ? 'Active' : 'Offline'}</span>
+          <span className={`w-[6px] h-[6px] rounded-full ${isHealthy ? 'bg-ok shadow-[0_0_6px_var(--ok)] animate-pulse motion-reduce:animate-none' : 'bg-bad'}`} />
+          <span className="text-[10.5px] text-t2 uppercase font-medium">{isHealthy ? 'LIVE' : 'OFFLINE'}</span>
         </div>
       </div>
     </aside>

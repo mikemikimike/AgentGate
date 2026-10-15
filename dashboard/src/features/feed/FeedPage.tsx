@@ -57,8 +57,9 @@ export function FeedPage({ isApprovalsMode = false }: { isApprovalsMode?: boolea
     const total = allDecisions.length;
     const denied = allDecisions.filter(d => d.verdict?.toLowerCase() === 'deny').length;
     const asked = allDecisions.filter(d => d.verdict?.toLowerCase() === 'ask').length;
+    const checkpoints = allDecisions.filter(d => d.verdict?.toLowerCase() === 'allow_with_checkpoint').length;
     const allowed = allDecisions.filter(d => d.verdict?.toLowerCase() === 'allow').length;
-    return { total, denied, asked, allowed };
+    return { total, denied, asked, checkpoints, allowed };
   }, [allDecisions]);
 
   // Filter client-side by search term, verdict, and time range
@@ -284,9 +285,10 @@ export function FeedPage({ isApprovalsMode = false }: { isApprovalsMode?: boolea
             <button 
               onClick={() => refetch()} 
               disabled={isRefetching}
-              className="h-[28px] px-[10px] text-[12.5px] font-normal bg-rs border border-l2 rounded-[6px] text-tx hover:bg-hv flex items-center gap-[6px] transition-colors disabled:opacity-50"
+              aria-label="Refresh decisions log"
+              className="h-[28px] px-[10px] text-[12.5px] font-normal bg-rs border border-l2 rounded-[6px] text-tx hover:bg-hv flex items-center gap-[6px] transition-colors disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
             >
-              <RefreshCw size={13} strokeWidth={1.6} className={isRefetching ? 'animate-spin' : ''} />
+              <RefreshCw size={13} strokeWidth={1.6} aria-hidden="true" className={isRefetching ? 'animate-spin motion-reduce:animate-none' : ''} />
               <span>Refresh</span>
             </button>
           </div>
@@ -298,6 +300,11 @@ export function FeedPage({ isApprovalsMode = false }: { isApprovalsMode?: boolea
             <span className="w-[7px] h-[7px] rounded-full bg-ok" />
             <span className="text-tx font-medium tabular-nums">{stats.allowed}</span>
             <span>allowed (safe)</span>
+          </span>
+          <span className="flex items-center gap-[6px]" title="Autonomous tool calls permitted with rollback checkpoint snapshots">
+            <span className="w-[7px] h-[7px] rounded-[1px] bg-chk" />
+            <span className="text-tx font-medium tabular-nums">{stats.checkpoints}</span>
+            <span>checkpoints</span>
           </span>
           <span className="flex items-center gap-[6px]" title="High-risk or uncertain actions paused for human approval">
             <span className="w-[7px] h-[7px] rounded-full bg-wn" />
@@ -326,7 +333,7 @@ export function FeedPage({ isApprovalsMode = false }: { isApprovalsMode?: boolea
               <button
                 key={t.id}
                 onClick={() => setTimeRange(t.id)}
-                className={`h-[24px] px-[8px] rounded-[5px] transition-colors leading-none ${
+                className={`h-[24px] px-[8px] rounded-[5px] transition-colors leading-none focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden ${
                   timeRange === t.id
                     ? 'bg-sl text-tx font-medium'
                     : 'text-t2 hover:text-tx hover:bg-hv'
@@ -342,13 +349,14 @@ export function FeedPage({ isApprovalsMode = false }: { isApprovalsMode?: boolea
             {[
               { id: 'all', label: 'All verdicts' },
               { id: 'allow', label: 'Allow' },
+              { id: 'allow_with_checkpoint', label: 'Checkpoint' },
               { id: 'ask', label: 'Ask' },
               { id: 'deny', label: 'Deny' },
             ].map((v) => (
               <button
                 key={v.id}
                 onClick={() => setVerdictFilter(v.id)}
-                className={`h-[24px] px-[8px] rounded-[5px] transition-colors leading-none ${
+                className={`h-[24px] px-[8px] rounded-[5px] transition-colors leading-none focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden ${
                   verdictFilter === v.id
                     ? 'bg-sl text-tx font-medium'
                     : 'text-t2 hover:text-tx hover:bg-hv'
@@ -361,14 +369,18 @@ export function FeedPage({ isApprovalsMode = false }: { isApprovalsMode?: boolea
         </div>
 
         {/* Search input: 28px tall, 220px wide, 1px --l2 */}
-        <div className="relative w-[220px]">
-          <Search size={13} strokeWidth={1.6} className="absolute left-[8px] top-1/2 -translate-y-1/2 text-t3 pointer-events-none" />
+        <div className="relative w-[240px]">
+          <Search size={13} strokeWidth={1.6} aria-hidden="true" className="absolute left-[8px] top-1/2 -translate-y-1/2 text-t3 pointer-events-none" />
           <input 
             type="text" 
-            placeholder="Search" 
+            name="search"
+            aria-label="Search decisions by tool, session, or rule"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Search tool, session, or rule…" 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-[28px] bg-bg border border-l2 rounded-[6px] pl-[26px] pr-[8px] text-[12.5px] text-tx placeholder:text-t3 focus:border-ac transition-colors"
+            className="w-full h-[28px] bg-bg border border-l2 rounded-[6px] pl-[26px] pr-[8px] text-[12.5px] text-tx placeholder:text-t3 focus-visible:border-at focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden transition-colors"
           />
         </div>
       </div>
@@ -377,7 +389,7 @@ export function FeedPage({ isApprovalsMode = false }: { isApprovalsMode?: boolea
       <div className="px-[20px] pb-[32px]">
         {isLoading ? (
           <div className="h-[200px] border border-ln rounded-[8px] bg-pn flex items-center justify-center text-t3 text-[13px]">
-            Loading decisions...
+            Loading decisions…
           </div>
         ) : (
           <div className="flex flex-col gap-[12px]">
@@ -392,9 +404,9 @@ export function FeedPage({ isApprovalsMode = false }: { isApprovalsMode?: boolea
                 <button 
                   onClick={() => fetchNextPage()} 
                   disabled={isFetchingNextPage}
-                  className="h-[28px] px-[14px] text-[12.5px] font-normal bg-rs border border-l2 rounded-[6px] text-tx hover:bg-hv transition-colors disabled:opacity-50"
+                  className="h-[28px] px-[14px] text-[12.5px] font-normal bg-rs border border-l2 rounded-[6px] text-tx hover:bg-hv transition-colors disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
                 >
-                  {isFetchingNextPage ? 'Loading...' : 'Load older records'}
+                  {isFetchingNextPage ? 'Loading…' : 'Load older records'}
                 </button>
               </div>
             )}

@@ -70,4 +70,43 @@ describe("Effects Database & Command Parser", () => {
     expect(classifyToolEffects("database_query", { query: "DROP TABLE users" })).toEqual(["delete"]);
     expect(classifyToolEffects("database_query", { query: "UPDATE users SET active = true" })).toEqual(["write"]);
   });
+
+  it("unwraps privilege commands (sudo, su) to expose underlying operation effects", () => {
+    const sudoRm = classifyCommand("sudo", ["rm", "-rf", "/var/log/app"]);
+    expect(sudoRm).toContain("privilege");
+    expect(sudoRm).toContain("delete");
+
+    const sudoUserCp = classifyCommand("sudo", ["-u", "deploy", "cp", "app.bin", "/opt/app/"]);
+    expect(sudoUserCp).toContain("privilege");
+    expect(sudoUserCp).toContain("write");
+
+    const suRm = classifyCommand("su", ["-c", "rm -rf /var/tmp"]);
+    expect(suRm).toContain("privilege");
+    expect(suRm).toContain("delete");
+
+    const analysis = analyzeBashEffects("sudo rm -rf /etc/hosts");
+    expect(analysis.binaries).toContain("sudo");
+    expect(analysis.binaries).toContain("rm");
+    expect(analysis.effects).toContain("privilege");
+    expect(analysis.effects).toContain("delete");
+  });
+
+  it("detects shell output redirection to files as write effect while ignoring quotes and fd duplication", () => {
+    const redirectWrite = analyzeBashEffects("echo 'secret' > /etc/shadow");
+    expect(redirectWrite.effects).toContain("write");
+    expect(redirectWrite.effects).toContain("read");
+
+    const appendWrite = analyzeBashEffects("cat payload >> ~/.bashrc");
+    expect(appendWrite.effects).toContain("write");
+    expect(appendWrite.effects).toContain("read");
+
+    const quotedOperator = analyzeBashEffects('grep "foo > bar" output.log');
+    expect(quotedOperator.effects).not.toContain("write");
+    expect(quotedOperator.effects).toContain("read");
+
+    const fdDuplication = analyzeBashEffects("ls -la 2>&1");
+    expect(fdDuplication.effects).not.toContain("write");
+    expect(fdDuplication.effects).toContain("read");
+  });
 });
+

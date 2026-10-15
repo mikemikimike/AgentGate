@@ -1,7 +1,7 @@
 const HEAD_TITLES: Record<string, string> = {
-  untrusted_influence: 'Untrusted Content Influence',
-  external_send: 'External Data Transfer',
-  reversibility: 'Blast Radius & Reversibility',
+  untrusted_influence: 'Untrusted Influence',
+  external_send: 'External Send',
+  reversibility: 'Blast Radius / Reversibility',
   goal_alignment: 'Session Goal Alignment'
 };
 
@@ -17,6 +17,7 @@ export function HeadCard({
   const title = HEAD_TITLES[headName] || headName.replace(/_/g, ' ');
   const prob = (probabilities && probabilities[answer] !== undefined) ? probabilities[answer] : 0.85;
   const percentage = Math.round(prob * 100);
+  const activeSegments = Math.round(prob * 20);
 
   const isHighRisk = (headName === 'untrusted_influence' && answer === 'likely') ||
                      (headName === 'external_send' && answer === 'yes') ||
@@ -28,34 +29,44 @@ export function HeadCard({
                        (headName === 'goal_alignment' && answer === 'tangential');
 
   const badgeColor = isHighRisk 
-    ? 'text-bad bg-bad/10 border-bad/30' 
+    ? 'text-bad bg-bad/10 border-bad/40 shadow-[0_0_8px_var(--badb)]' 
     : isMediumRisk 
-    ? 'text-wn bg-wn/10 border-wn/30' 
-    : 'text-ok bg-ok/10 border-ok/30';
+    ? 'text-wn bg-wn/10 border-wn/40 shadow-[0_0_8px_var(--wnb)]' 
+    : 'text-ok bg-ok/10 border-ok/40 shadow-[0_0_8px_var(--okb)]';
 
-  const barColor = isHighRisk ? 'bg-bad' : isMediumRisk ? 'bg-wn' : 'bg-ok/60';
+  const segmentActiveColor = isHighRisk 
+    ? 'bg-bad shadow-[0_0_4px_var(--bad)]' 
+    : isMediumRisk 
+    ? 'bg-wn shadow-[0_0_4px_var(--wn)]' 
+    : 'bg-ok shadow-[0_0_4px_var(--ok)]';
 
   return (
-    <div className="border border-ln bg-bg rounded-6 p-12 flex flex-col gap-8 shadow-xs">
-      <div className="flex items-center justify-between text-[12px]">
-        <span className="font-medium text-tx capitalize">{title}</span>
-        <span className="font-mono text-[10.5px] text-t3">{headName}</span>
+    <div className="border border-ln bg-pn/90 rounded-[6px] p-[12px] flex flex-col gap-[10px] shadow-sm relative overflow-hidden backdrop-blur-xs">
+      {/* Top row: Expressive Space Grotesk display title + technical head code */}
+      <div className="flex items-center justify-between">
+        <span className="font-display font-semibold text-[13px] text-tx tracking-tight">{title}</span>
+        <span className="font-mono text-[10px] text-t3 uppercase tracking-wider">{headName}</span>
       </div>
 
-      <div className="flex items-center justify-between pt-2">
-        <span className={`px-6 py-2 rounded text-[11.5px] font-mono font-medium border ${badgeColor}`}>
+      {/* Metric row: Output token plate + confidence percentage */}
+      <div className="flex items-center justify-between pt-[2px]">
+        <span className={`px-[8px] py-[2px] rounded-[3px] text-[11px] font-mono font-semibold uppercase tracking-wider border ${badgeColor}`}>
           {answer}
         </span>
-        <span className="font-mono text-[13px] font-semibold text-tx">
-          {percentage}%
-        </span>
+        <div className="flex items-baseline gap-[3px] font-mono">
+          <span className="text-[14px] font-bold text-tx tabular-nums">{percentage}%</span>
+          <span className="text-[10px] text-t3">conf</span>
+        </div>
       </div>
 
-      <div className="w-full h-4 bg-sl rounded-full overflow-hidden relative mt-2">
-        <div 
-          className={`h-full transition-all duration-300 ${barColor}`} 
-          style={{ width: `${percentage}%` }} 
-        />
+      {/* 20-segment hardware-style calibration bar */}
+      <div className="flex gap-[2px] h-[6px] p-[1px] bg-rs rounded-[2px] border border-ln/80 mt-[2px]">
+        {Array.from({ length: 20 }).map((_, idx) => (
+          <span 
+            key={idx} 
+            className={`flex-1 rounded-[1px] transition-all duration-200 ${idx < activeSegments ? segmentActiveColor : 'bg-sl/30'}`}
+          />
+        ))}
       </div>
     </div>
   );

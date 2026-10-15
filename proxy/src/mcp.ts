@@ -113,7 +113,7 @@ async function handleToolCall(req: any) {
     const { verdict, decision_id, reason_codes } = res.data;
     console.error(`[AgentGate MCP] Verdict for ${toolName}: ${verdict.toUpperCase()}`);
 
-    if (verdict === 'allow') {
+    if (verdict === 'allow' || verdict === 'allow_with_checkpoint') {
       // Forward to upstream
       upstream.stdin.write(JSON.stringify(req) + '\n');
     } else if (verdict === 'deny') {

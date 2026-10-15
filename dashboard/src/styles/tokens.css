@@ -1,57 +1,61 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root, :root[data-theme="dark"] {
-  --bg: #09090b;
-  --pn: #0c0c0f;
-  --rs: #111114;
-  --hv: #141418;
-  --sl: #17171c;
-  --ln: #1d1d22;
-  --l2: #2a2a31;
-  --tx: #ececf0;
-  --t2: #a1a1aa;
-  --t3: #71717a;
-  --ac: #ce422b;
-  --at: #ee6a50;
-  --ok: #4cb782;
-  --wn: #e5a93d;
-  --bad: #ef5b57;
-  --nf: #6aa5f8;
-  --okb: rgba(76, 183, 130, 0.09);
-  --wnb: rgba(229, 169, 61, 0.09);
-  --badb: rgba(239, 91, 87, 0.09);
+  --bg: #07070a;
+  --pn: #0e0e13;
+  --rs: #13131a;
+  --hv: #191922;
+  --sl: #1e1e28;
+  --ln: #242432;
+  --l2: #343446;
+  --tx: #f3f3f6;
+  --t2: #9d9db0;
+  --t3: #6b6b80;
+  --ac: #d946ef;
+  --at: #06b6d4;
+  --ok: #10b981;
+  --wn: #f59e0b;
+  --bad: #ef4444;
+  --nf: #38bdf8;
+  --chk: #06b6d4;
+  --okb: rgba(16, 185, 129, 0.12);
+  --wnb: rgba(245, 158, 11, 0.12);
+  --badb: rgba(239, 68, 68, 0.12);
+  --chkb: rgba(6, 182, 212, 0.12);
 }
 
 :root[data-theme="light"] {
-  --bg: #fbfbfc;
+  --bg: #f8f9fa;
   --pn: #ffffff;
-  --rs: #f6f6f8;
-  --hv: #f1f1f4;
-  --sl: #ececf0;
-  --ln: #e6e6ea;
-  --l2: #d4d4da;
-  --tx: #17171a;
-  --t2: #52525b;
-  --t3: #8a8a94;
-  --ac: #c43a24;
-  --at: #c43a24;
-  --ok: #1f8a5b;
-  --wn: #b7791f;
-  --bad: #d1423e;
-  --nf: #2f6fe0;
-  --okb: rgba(31, 138, 91, 0.08);
-  --wnb: rgba(183, 121, 31, 0.08);
-  --badb: rgba(209, 66, 62, 0.08);
+  --rs: #f1f3f5;
+  --hv: #e9ecef;
+  --sl: #dee2e6;
+  --ln: #ced4da;
+  --l2: #adb5bd;
+  --tx: #1a1a24;
+  --t2: #495057;
+  --t3: #6c757d;
+  --ac: #c026d3;
+  --at: #0891b2;
+  --ok: #059669;
+  --wn: #d97706;
+  --bad: #dc2626;
+  --nf: #0284c7;
+  --chk: #0891b2;
+  --okb: rgba(5, 150, 105, 0.10);
+  --wnb: rgba(217, 119, 6, 0.10);
+  --badb: rgba(220, 38, 38, 0.10);
+  --chkb: rgba(8, 145, 178, 0.10);
 }
 
 html {
   background-color: var(--bg);
   color: var(--tx);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 13px;
   line-height: 20px;
   letter-spacing: -0.01em;

@@ -1,7 +1,7 @@
 import time
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.model_loader import load_model
 from src.questions import QUESTIONS
@@ -10,8 +10,8 @@ app = FastAPI(title="AgentGate Decision Server")
 model = load_model()
 
 class DecideRequest(BaseModel):
-    text: str
-    questions: list[str]
+    text: str = Field(..., max_length=65536, description="Input state prompt, capped at 64KB")
+    questions: list[str] = Field(..., max_length=20, description="List of question heads")
 
 @app.post("/decide")
 async def decide(req: DecideRequest):

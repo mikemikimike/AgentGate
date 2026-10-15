@@ -16,19 +16,20 @@ import { generateId } from '../utils/id';
 import { z } from 'zod';
 
 const streamEmitter = new EventEmitter();
+streamEmitter.setMaxListeners(100);
 
 const AssessRequestSchema = z.object({
-  session_id: z.string(),
+  session_id: z.string().min(1).max(64),
   action: z.object({
-    tool: z.string(),
+    tool: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_.:-]+$/, 'Invalid tool name characters'),
     arguments: z.any()
   }),
-  history_override: z.array(z.any()).optional()
+  history_override: z.array(z.any()).max(100).optional()
 });
 
 const SessionRequestSchema = z.object({
-  agent_id: z.string(),
-  goal: z.string()
+  agent_id: z.string().min(1).max(128),
+  goal: z.string().min(1).max(8192)
 });
 
 const decisionUrl = process.env.AG_DECISION_URL || 'http://decision:9000';
@@ -127,6 +128,14 @@ async function getModelConfig() {
 
 export default async function routes(fastify: FastifyInstance) {
   fastify.register(FastifySSEPlugin);
+
+  // Security Headers Hook (CWE-693 / Defense-in-Depth)
+  fastify.addHook('onSend', async (_request, reply) => {
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('X-Frame-Options', 'DENY');
+    reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    reply.header('Permissions-Policy', 'interest-cohort=()');
+  });
 
   // Setup Postgres LISTEN for distributed SSE routing
   const setupPgListener = async () => {
@@ -305,9 +314,18 @@ export default async function routes(fastify: FastifyInstance) {
 
   // Dashboard Authentication Middleware (Timing-safe comparison)
   const requireDashboardAuth = async (request: any, reply: any) => {
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.AG_STRICT_AUTH === 'true';
+    const configuredKey = process.env.AG_DASHBOARD_KEY;
+
+    if (isProduction && (!configuredKey || configuredKey === 'dev-key-123')) {
+      return reply.status(500).send({ 
+        error: 'Server Misconfiguration: AG_DASHBOARD_KEY must be configured with a secure key in production mode' 
+      });
+    }
+
+    const expectedKey = configuredKey || 'dev-key-123';
     const authHeader = request.headers.authorization;
     const queryToken = (request.query as any)?.token;
-    const expectedKey = process.env.AG_DASHBOARD_KEY || 'dev-key-123';
     
     const token = authHeader?.startsWith('Bearer ')
       ? authHeader.slice(7)
@@ -505,12 +523,18 @@ export default async function routes(fastify: FastifyInstance) {
       const updateRes = await client.query(`
         UPDATE approvals 
         SET status = $1, reviewer = $2, note = $3, decided_at = now() 
-        WHERE id = $4
+        WHERE id = $4 AND status = 'pending'
         RETURNING decision_id
       `, [approvalStatus, reviewer || 'operator', note || null, id]);
 
       if (updateRes.rows.length === 0) {
         await client.query('ROLLBACK');
+        const existing = await client.query('SELECT status FROM approvals WHERE id = $1', [id]);
+        if (existing.rows.length > 0) {
+          return reply.status(409).send({ 
+            error: `Approval request ${id} has already been decided with status '${existing.rows[0].status}'` 
+          });
+        }
         return reply.status(404).send({ error: 'Approval request not found' });
       }
 
@@ -528,7 +552,7 @@ export default async function routes(fastify: FastifyInstance) {
     return { success: true, verdict: finalVerdict, status: approvalStatus };
   });
 
-  fastify.post('/v1/checkpoints/:id/revert', async (request: any, reply) => {
+  fastify.post('/v1/checkpoints/:id/revert', { preHandler: requireDashboardAuth }, async (request: any, reply) => {
     const { id } = request.params as any;
     try {
       const result = await revertCheckpoint(id);
@@ -538,7 +562,7 @@ export default async function routes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/v1/checkpoints/:id', async (request: any, reply) => {
+  fastify.get('/v1/checkpoints/:id', { preHandler: requireDashboardAuth }, async (request: any, reply) => {
     const { id } = request.params as any;
     const chk = await getCheckpoint(id);
     if (!chk) {
@@ -547,14 +571,14 @@ export default async function routes(fastify: FastifyInstance) {
     return chk;
   });
 
-  fastify.get('/v1/checkpoints', async (request: any, _reply) => {
+  fastify.get('/v1/checkpoints', { preHandler: requireDashboardAuth }, async (request: any, _reply) => {
     const sessionId = (request.query as any)?.session_id;
     const limit = parseInt((request.query as any)?.limit || '50', 10);
     const list = await listCheckpoints(sessionId, limit);
     return { checkpoints: list };
   });
 
-  fastify.get('/v1/shadow/summary', async (_request, _reply) => {
+  fastify.get('/v1/shadow/summary', { preHandler: requireDashboardAuth }, async (_request, _reply) => {
     const isShadowMode = process.env.AG_SHADOW_MODE === 'true';
 
     const countRes = await pool.query(`

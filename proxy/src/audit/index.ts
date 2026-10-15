@@ -27,6 +27,25 @@ export function redactArguments(args: any, seen: WeakSet<object> = new WeakSet()
   
   const sensitiveKeys = ['password', 'token', 'key', 'auth', 'secret', 'credential', 'cert'];
 
+  const SENSITIVE_PATTERNS = [
+    // Bearer token patterns
+    /bearer\s+[a-zA-Z0-9-._~+/]+=*/i,
+    // AWS Access Key ID
+    /AKIA[0-9A-Z]{16}/,
+    // Google API Key
+    /AIza[0-9A-Za-z-_]{35}/,
+    // GitHub Tokens (classic ghp, oauth gho, user ghu, fine-grained github_pat)
+    /(?:ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{36,}|github_pat_[a-zA-Z0-9_]{82}/,
+    // Slack Tokens (user, bot, app, refresh)
+    /xox[baprs]-[0-9]{10,13}-[a-zA-Z0-9-]+/,
+    // Private Key Headers (RSA, OpenSSH, EC, PGP)
+    /-----BEGIN (?:[A-Z ]+)?PRIVATE KEY-----/,
+    // Connection Strings with Passwords (postgres://user:pass@host:5432/db, mongodb://user:pass@host, etc.)
+    /[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^:\s]+:[^@\s]+@[^/\s]+/,
+    // Shell assignments of secrets (e.g. export AWS_SECRET=..., TOKEN=..., PASSWORD=...)
+    /(?:export\s+)?(?:[a-zA-Z0-9_]*(?:SECRET|PASSWORD|PASSWD|TOKEN|API_KEY|AUTH_KEY)[a-zA-Z0-9_]*)\s*[:=]\s*['"]?[^\s'"]{6,}['"]?/i
+  ];
+
   if (Array.isArray(args)) {
     return args.map(item => redactArguments(item, seen));
   }
@@ -41,8 +60,7 @@ export function redactArguments(args: any, seen: WeakSet<object> = new WeakSet()
       const lowerKey = key.toLowerCase();
       
       const isSensitiveKey = sensitiveKeys.some(sk => lowerKey.includes(sk));
-      // Basic heuristic patterns for AWS/GCP/Bearer
-      const isSensitivePattern = /(bearer\s+[a-zA-Z0-9-._~+/]+=*)|(AKIA[0-9A-Z]{16})|(AIza[0-9A-Za-z-_]{35})/i.test(val);
+      const isSensitivePattern = SENSITIVE_PATTERNS.some(pattern => pattern.test(val));
       
       if (isSensitiveKey || isSensitivePattern) {
         redacted[key] = '[REDACTED]';

@@ -19,7 +19,7 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
           <div className="flex items-center justify-between px-20 py-16 border-b border-ln bg-sl/30 shrink-0">
             <div className="flex items-center gap-10">
               <div className="w-28 h-28 rounded-[6px] border border-ac bg-ac/10 flex items-center justify-center text-ac">
-                <Shield size={16} />
+                <Shield size={16} aria-hidden="true" />
               </div>
               <div>
                 <Dialog.Title className="text-[15px] font-semibold text-tx leading-tight">
@@ -30,8 +30,11 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
                 </p>
               </div>
             </div>
-            <Dialog.Close className="text-t3 hover:text-tx focus:outline-none rounded-4 p-4 hover:bg-hv transition-colors">
-              <X size={18} />
+            <Dialog.Close 
+              aria-label="Close dialog"
+              className="text-t3 hover:text-tx rounded-4 p-4 hover:bg-hv transition-colors focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden"
+            >
+              <X size={18} aria-hidden="true" />
             </Dialog.Close>
           </div>
 
@@ -46,7 +49,7 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
                 <div className="p-12 rounded-[6px] border border-ln bg-bg space-y-6">
                   <div className="flex items-center gap-6 font-semibold text-tx text-[13px]">
                     <span className="w-20 h-20 rounded-full bg-sl flex items-center justify-center text-[10px] text-at font-mono">1</span>
-                    <Terminal size={14} className="text-at" />
+                    <Terminal size={14} className="text-at" aria-hidden="true" />
                     <span>Intercept</span>
                   </div>
                   <p className="text-t2 text-[12px] leading-relaxed">
@@ -57,7 +60,7 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
                 <div className="p-12 rounded-[6px] border border-ln bg-bg space-y-6">
                   <div className="flex items-center gap-6 font-semibold text-tx text-[13px]">
                     <span className="w-20 h-20 rounded-full bg-sl flex items-center justify-center text-[10px] text-at font-mono">2</span>
-                    <Layers size={14} className="text-wn" />
+                    <Layers size={14} className="text-wn" aria-hidden="true" />
                     <span>AI Safety Score</span>
                   </div>
                   <p className="text-t2 text-[12px] leading-relaxed">
@@ -68,7 +71,7 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
                 <div className="p-12 rounded-[6px] border border-ln bg-bg space-y-6">
                   <div className="flex items-center gap-6 font-semibold text-tx text-[13px]">
                     <span className="w-20 h-20 rounded-full bg-sl flex items-center justify-center text-[10px] text-at font-mono">3</span>
-                    <Shield size={14} className="text-ok" />
+                    <Shield size={14} className="text-ok" aria-hidden="true" />
                     <span>Enforce Policy</span>
                   </div>
                   <p className="text-t2 text-[12px] leading-relaxed">
@@ -130,7 +133,7 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
                 <div className="p-10 rounded-[6px] border border-ln bg-bg space-y-4">
                   <div className="flex items-center gap-6 font-semibold text-tx text-[12px]">
-                    <Activity size={14} className="text-at" />
+                    <Activity size={14} className="text-at" aria-hidden="true" />
                     <span>Audit Log</span>
                   </div>
                   <p className="text-t3 text-[11.5px] leading-relaxed">
@@ -140,7 +143,7 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
 
                 <div className="p-10 rounded-[6px] border border-ln bg-bg space-y-4">
                   <div className="flex items-center gap-6 font-semibold text-tx text-[12px]">
-                    <CheckSquare size={14} className="text-wn" />
+                    <CheckSquare size={14} className="text-wn" aria-hidden="true" />
                     <span>Approvals</span>
                   </div>
                   <p className="text-t3 text-[11.5px] leading-relaxed">
@@ -150,7 +153,7 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
 
                 <div className="p-10 rounded-[6px] border border-ln bg-bg space-y-4">
                   <div className="flex items-center gap-6 font-semibold text-tx text-[12px]">
-                    <Layers size={14} className="text-ok" />
+                    <Layers size={14} className="text-ok" aria-hidden="true" />
                     <span>Policy Rules</span>
                   </div>
                   <p className="text-t3 text-[11.5px] leading-relaxed">
@@ -166,15 +169,15 @@ export function HowItWorksModal({ open, onOpenChange }: HowItWorksModalProps) {
             <Link 
               to="/docs" 
               onClick={() => onOpenChange(false)}
-              className="text-[12px] text-at hover:underline flex items-center gap-4"
+              className="text-[12px] text-at hover:underline flex items-center gap-4 focus-visible:ring-1 focus-visible:ring-at focus-visible:outline-hidden rounded-[3px]"
             >
-              <BookOpen size={13} />
+              <BookOpen size={13} aria-hidden="true" />
               <span>Read Full Documentation</span>
             </Link>
 
             <button
               onClick={() => onOpenChange(false)}
-              className="h-28 px-14 rounded-[4px] bg-ac text-white text-[12px] font-medium hover:brightness-110 transition-all shadow-xs"
+              className="h-28 px-14 rounded-[4px] bg-ac text-white text-[12px] font-medium hover:brightness-110 transition-all shadow-xs focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-ac focus-visible:outline-hidden"
             >
               Got it, let's go!
             </button>

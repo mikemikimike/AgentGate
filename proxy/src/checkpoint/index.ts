@@ -1,10 +1,11 @@
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
 import fs from "fs";
+import path from "path";
 import { pool } from "../db";
 import { generateId } from "../utils/id";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface CheckpointOptions {
   decisionId: string;
@@ -33,11 +34,21 @@ export interface CheckpointRecord {
  */
 export async function isGitRepository(cwd: string): Promise<boolean> {
   try {
-    const { stdout } = await execAsync("git rev-parse --is-inside-work-tree", { cwd });
+    const { stdout } = await execFileAsync("git", ["rev-parse", "--is-inside-work-tree"], { cwd });
     return stdout.trim() === "true";
   } catch {
     return false;
   }
+}
+
+/**
+ * Validates that targetPath is contained within workspaceDir, preventing directory traversal.
+ */
+export function isPathWithinWorkspace(targetPath: string, workspaceDir: string): boolean {
+  const resolvedTarget = path.resolve(targetPath);
+  const resolvedWorkspace = path.resolve(workspaceDir);
+  const relative = path.relative(resolvedWorkspace, resolvedTarget);
+  return !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 
 /**
@@ -56,14 +67,14 @@ export async function createCheckpoint(options: CheckpointOptions): Promise<Chec
     const inGit = await isGitRepository(cwd);
     if (inGit) {
       try {
-        const { stdout: headCommit } = await execAsync("git rev-parse HEAD", { cwd });
+        const { stdout: headCommit } = await execFileAsync("git", ["rev-parse", "HEAD"], { cwd });
         gitCommit = headCommit.trim();
       } catch (err) {
         // HEAD commit unavailable (e.g. empty git repo)
       }
 
       try {
-        const { stdout: branch } = await execAsync("git rev-parse --abbrev-ref HEAD", { cwd });
+        const { stdout: branch } = await execFileAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd });
         gitBranch = branch.trim();
       } catch (err) {
         // Current branch unavailable
@@ -71,7 +82,7 @@ export async function createCheckpoint(options: CheckpointOptions): Promise<Chec
 
       try {
         // git stash create creates a commit object of dirty changes without modifying git state
-        const { stdout: stashSha } = await execAsync(`git stash create "agentgate-pre-image-${id}"`, { cwd });
+        const { stdout: stashSha } = await execFileAsync("git", ["stash", "create", `agentgate-pre-image-${id}`], { cwd });
         const trimmedStash = stashSha.trim();
         preImageRef = trimmedStash.length > 0 ? trimmedStash : gitCommit;
       } catch (err) {
@@ -79,15 +90,31 @@ export async function createCheckpoint(options: CheckpointOptions): Promise<Chec
       }
     }
 
-    // If tool targets a specific file, snapshot its content into details
-    const filePath = options.actionArgs?.path || options.actionArgs?.file_path || options.actionArgs?.target_file;
-    if (filePath && typeof filePath === "string" && fs.existsSync(filePath)) {
-      try {
-        const content = fs.readFileSync(filePath, "utf-8");
-        details.target_file = filePath;
-        details.pre_content = content;
-      } catch (err: any) {
-        details.file_read_error = err.message;
+    // If tool targets a specific file, snapshot its content into details (capped at 1MB, confined to workspace)
+    const rawFilePath = options.actionArgs?.path || options.actionArgs?.file_path || options.actionArgs?.target_file;
+    if (rawFilePath && typeof rawFilePath === "string") {
+      const resolvedPath = path.isAbsolute(rawFilePath) ? rawFilePath : path.resolve(cwd, rawFilePath);
+      const workspaceRoot = options.workspacePath || process.env.AG_WORKSPACE_DIR;
+
+      if (workspaceRoot && !isPathWithinWorkspace(resolvedPath, workspaceRoot)) {
+        details.boundary_violation = true;
+        details.skipped_file = resolvedPath;
+      } else if (fs.existsSync(resolvedPath)) {
+        try {
+          const stat = fs.statSync(resolvedPath);
+          const MAX_SNAPSHOT_BYTES = 1024 * 1024; // 1MB cap
+          if (stat.isFile()) {
+            details.target_file = resolvedPath;
+            if (stat.size <= MAX_SNAPSHOT_BYTES) {
+              details.pre_content = fs.readFileSync(resolvedPath, "utf-8");
+            } else {
+              details.pre_content_omitted = true;
+              details.file_size = stat.size;
+            }
+          }
+        } catch (err: any) {
+          details.file_read_error = err.message;
+        }
       }
     }
 
@@ -173,7 +200,7 @@ export async function revertCheckpoint(id: string, customCwd?: string): Promise<
   // 1. If Git pre_image_ref exists, restore files to that commit
   if (chk.pre_image_ref) {
     try {
-      await execAsync(`git checkout ${chk.pre_image_ref} -- .`, { cwd });
+      await execFileAsync("git", ["checkout", chk.pre_image_ref, "--", "."], { cwd });
       reverted = true;
       revertMsg += `Restored workspace to git commit ${chk.pre_image_ref}. `;
     } catch (err: any) {
@@ -181,14 +208,20 @@ export async function revertCheckpoint(id: string, customCwd?: string): Promise<
     }
   }
 
-  // 2. If single-file pre_content was saved, restore it
+  // 2. If single-file pre_content was saved, restore it (confining to workspace root)
   if (chk.details?.target_file && chk.details?.pre_content !== undefined) {
-    try {
-      fs.writeFileSync(chk.details.target_file, chk.details.pre_content, "utf-8");
-      reverted = true;
-      revertMsg += `Restored file ${chk.details.target_file}. `;
-    } catch (err: any) {
-      revertMsg += `File rollback failed: ${err.message}. `;
+    const targetFile = chk.details.target_file;
+    const workspaceRoot = process.env.AG_WORKSPACE_DIR || cwd;
+    if (workspaceRoot && !isPathWithinWorkspace(targetFile, workspaceRoot)) {
+      revertMsg += `File rollback rejected: target ${targetFile} escapes workspace boundary. `;
+    } else {
+      try {
+        fs.writeFileSync(targetFile, chk.details.pre_content, "utf-8");
+        reverted = true;
+        revertMsg += `Restored file ${targetFile}. `;
+      } catch (err: any) {
+        revertMsg += `File rollback failed: ${err.message}. `;
+      }
     }
   }
 
